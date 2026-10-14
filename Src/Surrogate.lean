@@ -1,15 +1,13 @@
--- Surrogate skeleton (finite-dimensional only)
 import Mathlib.Data.Matrix.Basic
-import Mathlib.LinearAlgebra.Matrix.NormedSpace
 
 namespace Surrogate
 
-/-- Finite-dimensional state -/
-structure State (n : Type*) where
-  val : n → ℝ
-
-/-- Projector (idempotent) statement skeleton -/
-def isProjector {n m : Type*} (P : Matrix m n ℝ) : Prop :=
+/-- Idempotent projection matrix: the discrete Leray projector's defining property. -/
+def isProjector {ι : Type*} [Fintype ι] (P : Matrix ι ι ℝ) : Prop :=
   P * P = P
+
+/-- Applied twice, the projector changes nothing. -/
+theorem projector_idempotent {ι : Type*} [Fintype ι] (P : Matrix ι ι ℝ)
+    (h : isProjector P) : P * P = P := h
 
 end Surrogate
