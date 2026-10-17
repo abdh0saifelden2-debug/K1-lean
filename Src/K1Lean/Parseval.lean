@@ -214,7 +214,8 @@ theorem parseval_complex (h : ZMod N → ℂ) :
         = ∑ k : ZMod N, ∑ j : ZMod N, ∑ i : ZMod N,
             (stdAddChar (-(j * k)) * h j) * (stdAddChar (i * k) * star (h i)) := by
           refine Finset.sum_congr rfl fun k _ => ?_
-          rw [hstar k, ZMod.dft_apply, smul_eq_mul, Finset.sum_mul, Finset.mul_sum]
+          rw [hstar k, ZMod.dft_apply, Finset.sum_mul, Finset.mul_sum]
+          simp only [smul_eq_mul]
     _ = ∑ k : ZMod N, ∑ j : ZMod N, ∑ i : ZMod N,
             stdAddChar ((i - j) * k) * (h j * star (h i)) := by
           exact Finset.sum_congr rfl fun k _ =>
@@ -236,10 +237,12 @@ theorem parseval_complex (h : ZMod N → ℂ) :
           have hstep (i : ZMod N) :
               (if i - j = 0 then (N : ℂ) else 0) * (h j * star (h i))
                 = if i = j then (N : ℂ) * (h j * star (h i)) else 0 := by
-            rw [sub_eq_zero]
-            split_ifs with hij
-            · rfl
-            · exact zero_mul _
+            by_cases hij : i = j
+            · subst hij
+              simp
+            · have hne : i - j ≠ 0 := fun h => hij (sub_eq_zero.mp h)
+              rw [if_neg hne, if_neg hij]
+              exact zero_mul _
           refine (Finset.sum_congr rfl fun i _ => hstep i).trans ?_
           exact Fintype.sum_ite_eq' j (fun i => (N : ℂ) * (h j * star (h i)))
     _ = (N : ℂ) * ∑ n : ZMod N, h n * star (h n) := by
@@ -256,9 +259,11 @@ theorem parseval (f : ZMod N → ℝ) :
   have htermL (z : ℂ) : Complex.ofRealHom (‖z‖ ^ 2) = z * star z := by
     rw [Complex.ofRealHom_eq_coe, ← Complex.normSq_eq_norm_sq, Complex.star_def,
       ← Complex.mul_conj]
+  have hnorm (r : ℝ) : ‖(r : ℂ)‖ ^ 2 = r ^ 2 := by
+    rw [RCLike.norm_ofReal, sq_abs]
   have htermR (r : ℝ) : Complex.ofRealHom (r ^ 2) = (r : ℂ) * star (r : ℂ) := by
-    rw [Complex.ofRealHom_eq_coe, Complex.star_def, RCLike.conj_ofReal,
-      ← Complex.ofReal_mul, ← pow_two]
+    rw [← hnorm r]
+    exact htermL (r : ℂ)
   have hcast :
       Complex.ofRealHom (∑ k : ZMod N, ‖ZMod.dft (fun j => (f j : ℂ)) k‖ ^ 2)
         = ∑ k : ZMod N,
