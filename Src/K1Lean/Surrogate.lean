@@ -1,4 +1,7 @@
 import Mathlib.Data.Matrix.Basic
+import Mathlib.Data.Real.Basic
+
+set_option autoImplicit false
 
 namespace Surrogate
 

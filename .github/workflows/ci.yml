@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install elan
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+      - name: Fetch mathlib cache
+        run: lake exe cache get
+      - name: Build
+        run: lake build
+      - name: Run
+        run: lake exe k1-lean
+      - name: Audit (no cheats, axioms check)
+        run: lake env lean Tests/Audit.lean
