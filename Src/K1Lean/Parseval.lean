@@ -130,7 +130,7 @@ theorem invDFT_eq_ofReal_re (X : ZMod N → ℂ) (hX : ∀ k, star (X k) = X (-k
 
 /-- Frozen setting: the surrogate spectrum `Xₖ := |f̂ₖ|·uₖ` — mode modulus of
 the real field's DFT carried by the phase field `u`. -/
-def surrogateSpectrum (f : ZMod N → ℝ) (u : ZMod N → ℂ) : ZMod N → ℂ :=
+noncomputable def surrogateSpectrum (f : ZMod N → ℝ) (u : ZMod N → ℂ) : ZMod N → ℂ :=
   fun k => (‖ZMod.dft (fun j => (f j : ℂ)) k‖ : ℂ) * u k
 
 /-- Milestone 3 bridge: with Hermitian `u`, the surrogate spectrum is Hermitian
