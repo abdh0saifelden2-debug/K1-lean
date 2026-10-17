@@ -22,3 +22,10 @@ jobs:
         run: lake exe k1-lean
       - name: Audit (no cheats, axioms check)
         run: lake env lean Tests/Audit.lean
+      - name: Cheat scan (word-boundary)
+        run: |
+          if grep -rnwE 'sorry|admit|axiom|unsafe|partial|opaque|native_decide' Src Tests Main.lean lakefile.lean; then
+            echo "CHEAT FOUND"; exit 1
+          else
+            echo "SCAN_CLEAN"
+          fi
