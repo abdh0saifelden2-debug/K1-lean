@@ -343,8 +343,9 @@ theorem mulSpectrum_dft_star (m : ZMod N → ℝ) (f : ZMod N → ℝ)
     (hm : ∀ k, m (-k) = m k) (k : ZMod N) :
     star (mulSpectrum m (fun k => ZMod.dft (fun j => (f j : ℂ)) k) k)
       = mulSpectrum m (fun k => ZMod.dft (fun j => (f j : ℂ)) k) (-k) := by
+  have hreal (r : ℝ) : star (r : ℂ) = (r : ℂ) := RCLike.conj_ofReal r
   dsimp only [mulSpectrum]
-  rw [star_mul', RCLike.conj_ofReal, ← hm k, dft_ofReal_conj]
+  rw [star_mul', hreal, ← hm k, dft_ofReal_conj]
 
 /-- Hermitian symmetry of the multiplier-filtered surrogate spectrum. -/
 theorem mulSpectrum_surrogate_star (m : ZMod N → ℝ) (f : ZMod N → ℝ)
@@ -352,8 +353,9 @@ theorem mulSpectrum_surrogate_star (m : ZMod N → ℝ) (f : ZMod N → ℝ)
     (hu1 : ∀ k, star (u k) = u (-k)) (k : ZMod N) :
     star (mulSpectrum m (surrogateSpectrum f u) k)
       = mulSpectrum m (surrogateSpectrum f u) (-k) := by
+  have hreal (r : ℝ) : star (r : ℂ) = (r : ℂ) := RCLike.conj_ofReal r
   dsimp only [mulSpectrum]
-  rw [star_mul', RCLike.conj_ofReal, ← hm k, surrogateSpectrum_star f u hu1]
+  rw [star_mul', hreal, ← hm k, surrogateSpectrum_star f u hu1]
 
 /-- Reality certificate: the IDFT underlying `mulField` has zero imaginary
 part at every entry. -/
@@ -411,7 +413,7 @@ theorem norm_mulSurrogate (m : ZMod N → ℝ) (f : ZMod N → ℝ) (u : ZMod N 
   rw [mulSurrogate_dft m f u hm hu1, mulField_dft m f hm]
   dsimp only [mulSpectrum]
   have hnormm : ‖((m k : ℝ) : ℂ)‖ = |m k| := RCLike.norm_ofReal (m k)
-  rw [norm_mul, hnormm, abs_of_nonneg (hm0 k), norm_surrogateSpectrum f u hu2 k]
+  rw [norm_mul, norm_mul, hnormm, abs_of_nonneg (hm0 k), norm_surrogateSpectrum f u hu2 k]
 
 /-- Frozen claim 4, phase half: `m·g` has the same phase as `g`. -/
 theorem phase_mulSurrogate (m : ZMod N → ℝ) (f : ZMod N → ℝ) (u : ZMod N → ℂ)
@@ -427,7 +429,8 @@ theorem phase_mulSurrogate (m : ZMod N → ℝ) (f : ZMod N → ℝ) (u : ZMod N
     rw [norm_mul, hnormm, abs_of_nonneg (hm0 k)]
   rw [hnorm, mulSurrogate_dft m f u hm hu1]
   dsimp only [mulSpectrum]
-  rw [phase_surrogateSpectrum f u hu2 k, ← mul_assoc, ← Complex.ofReal_mul]
+  conv_lhs => rw [phase_surrogateSpectrum f u hu2 k]
+  rw [← mul_assoc, ← Complex.ofReal_mul]
 
 /-- Frozen claim 3, bin half: every bin of the surrogate spectrum carries the
 same energy as the corresponding bin of `f̂`, `E_g(B) = E_f(B)`.
@@ -460,10 +463,11 @@ theorem parseval_mulSurrogate (m : ZMod N → ℝ) (f : ZMod N → ℝ) (u : ZMo
     (hu1 : ∀ k, star (u k) = u (-k)) (hu2 : ∀ k, ‖u k‖ = 1) :
     (∑ n : ZMod N, (mulSurrogate m f u n) ^ 2)
       = ∑ n : ZMod N, (mulField m f n) ^ 2 := by
-  rw [parseval (mulSurrogate m f u), parseval (mulField m f)]
-  have hN : (N : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
-  refine mul_left_cancel₀ (inv_ne_zero hN) ?_
-  exact Finset.sum_congr rfl fun k _ => by
-    rw [norm_mulSurrogate m f u hm hm0 hu1 hu2 k]
+  have hsums :
+      (∑ k : ZMod N, ‖ZMod.dft (fun j => (mulSurrogate m f u j : ℂ)) k‖ ^ 2)
+        = ∑ k : ZMod N, ‖ZMod.dft (fun j => (mulField m f j : ℂ)) k‖ ^ 2 :=
+    Finset.sum_congr rfl fun k _ => by
+      rw [norm_mulSurrogate m f u hm hm0 hu1 hu2 k]
+  rw [parseval (mulSurrogate m f u), parseval (mulField m f), hsums]
 
 end K1Lean
