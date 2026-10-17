@@ -176,4 +176,138 @@ theorem phase_surrogateSpectrum (f : ZMod N → ℝ) (u : ZMod N → ℂ)
   rw [norm_surrogateSpectrum f u hu2 k]
   rfl
 
+/-- Milestone 4, engine (audited public core): finite Parseval in bilinear form.
+For complex `h`, the unnormalized DFT preserves the total `z·z†` energy up to
+the exact factor `N`: `Σₖ 𝓕hₖ·(𝓕hₖ)† = N·Σₙ hₙ·hₙ†`. This is the load-bearing
+computation behind frozen claim 3 (`Σ g² = Σ f²`) and milestone 5's bin sums. -/
+theorem parseval_complex (h : ZMod N → ℂ) :
+    ∑ k : ZMod N, ZMod.dft h k * star (ZMod.dft h k)
+      = (N : ℂ) * ∑ n : ZMod N, h n * star (h n) := by
+  have hchar (x : ZMod N) : starRingEnd ℂ (stdAddChar (N := N) x) = stdAddChar (-x) :=
+    (AddChar.map_neg_eq_conj (stdAddChar (N := N)) x).symm
+  have hstar (k : ZMod N) :
+      star (ZMod.dft h k) = ∑ i : ZMod N, stdAddChar (i * k) * star (h i) := by
+    simp only [ZMod.dft_apply, smul_eq_mul]
+    rw [← starRingEnd_apply, map_sum]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [map_mul, hchar, starRingEnd_apply, neg_neg]
+  have h1 (t : ZMod N) :
+      ∑ i : ZMod N, stdAddChar (N := N) (t * i) = if t = 0 then (N : ℂ) else 0 := by
+    split_ifs with ht
+    · simp only [ht, zero_mul, AddChar.map_zero_eq_one, Finset.sum_const,
+        Finset.card_univ, ZMod.card, nsmul_eq_mul, mul_one]
+    · exact AddChar.sum_eq_zero_of_ne_one (ZMod.isPrimitive_stdAddChar N ht)
+  have harg (j i k : ZMod N) : -(j * k) + i * k = (i - j) * k := by
+    rw [add_comm, sub_mul, sub_eq_add_neg]
+  have hterm (j i k : ZMod N) :
+      (stdAddChar (-(j * k)) * h j) * (stdAddChar (i * k) * star (h i))
+        = stdAddChar ((i - j) * k) * (h j * star (h i)) := by
+    rw [mul_mul_mul_comm, ← AddChar.map_add_eq_mul, harg]
+  have hswap (F : ZMod N → ZMod N → ZMod N → ℂ) :
+      (∑ k : ZMod N, ∑ j : ZMod N, ∑ i : ZMod N, F k j i)
+        = ∑ j : ZMod N, ∑ i : ZMod N, ∑ k : ZMod N, F k j i := by
+    trans ∑ j : ZMod N, ∑ k : ZMod N, ∑ i : ZMod N, F k j i
+    · exact Finset.sum_comm
+    · exact Finset.sum_congr rfl fun j _ => Finset.sum_comm
+  calc
+    (∑ k : ZMod N, ZMod.dft h k * star (ZMod.dft h k))
+        = ∑ k : ZMod N, ∑ j : ZMod N, ∑ i : ZMod N,
+            (stdAddChar (-(j * k)) * h j) * (stdAddChar (i * k) * star (h i)) := by
+          refine Finset.sum_congr rfl fun k _ => ?_
+          rw [hstar k, ZMod.dft_apply, smul_eq_mul, Finset.sum_mul, Finset.mul_sum]
+    _ = ∑ k : ZMod N, ∑ j : ZMod N, ∑ i : ZMod N,
+            stdAddChar ((i - j) * k) * (h j * star (h i)) := by
+          exact Finset.sum_congr rfl fun k _ =>
+            Finset.sum_congr rfl fun j _ =>
+              Finset.sum_congr rfl fun i _ => hterm j i k
+    _ = ∑ j : ZMod N, ∑ i : ZMod N, ∑ k : ZMod N,
+            stdAddChar ((i - j) * k) * (h j * star (h i)) :=
+          hswap (fun k j i => stdAddChar ((i - j) * k) * (h j * star (h i)))
+    _ = ∑ j : ZMod N, ∑ i : ZMod N,
+            (∑ k : ZMod N, stdAddChar ((i - j) * k)) * (h j * star (h i)) := by
+          refine Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun i _ => ?_
+          rw [Finset.sum_mul]
+    _ = ∑ j : ZMod N, ∑ i : ZMod N,
+            (if i - j = 0 then (N : ℂ) else 0) * (h j * star (h i)) := by
+          refine Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun i _ => ?_
+          rw [h1]
+    _ = ∑ j : ZMod N, (N : ℂ) * (h j * star (h j)) := by
+          refine Finset.sum_congr rfl fun j _ => ?_
+          have hstep (i : ZMod N) :
+              (if i - j = 0 then (N : ℂ) else 0) * (h j * star (h i))
+                = if i = j then (N : ℂ) * (h j * star (h i)) else 0 := by
+            rw [sub_eq_zero]
+            split_ifs with hij
+            · rfl
+            · exact zero_mul _
+          refine (Finset.sum_congr rfl fun i _ => hstep i).trans ?_
+          exact Fintype.sum_ite_eq' j (fun i => (N : ℂ) * (h j * star (h i)))
+    _ = (N : ℂ) * ∑ n : ZMod N, h n * star (h n) := by
+          rw [Finset.mul_sum]
+
+/-- Frozen claim 3, finite-Parseval half (frozen line 18): for real `f`,
+`Σₙ fₙ² = N⁻¹·Σₖ ‖𝓕fₖ‖²` in the code (numpy) normalization. Derived from the
+audited bilinear engine `parseval_complex` via the coercion bridges
+`‖z‖² = z·z†` and `r² = r·r`. -/
+theorem parseval (f : ZMod N → ℝ) :
+    ∑ n : ZMod N, (f n) ^ 2
+      = (N : ℝ)⁻¹ * ∑ k : ZMod N, ‖ZMod.dft (fun j => (f j : ℂ)) k‖ ^ 2 := by
+  have hN : (N : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
+  have htermL (z : ℂ) : Complex.ofRealHom (‖z‖ ^ 2) = z * star z := by
+    rw [Complex.ofRealHom_eq_coe, ← Complex.normSq_eq_norm_sq, Complex.star_def,
+      ← Complex.mul_conj]
+  have htermR (r : ℝ) : Complex.ofRealHom (r ^ 2) = (r : ℂ) * star (r : ℂ) := by
+    rw [Complex.ofRealHom_eq_coe, Complex.star_def, RCLike.conj_ofReal,
+      ← Complex.ofReal_mul, ← pow_two]
+  have hcast :
+      Complex.ofRealHom (∑ k : ZMod N, ‖ZMod.dft (fun j => (f j : ℂ)) k‖ ^ 2)
+        = ∑ k : ZMod N,
+            ZMod.dft (fun j => (f j : ℂ)) k * star (ZMod.dft (fun j => (f j : ℂ)) k) := by
+    rw [map_sum Complex.ofRealHom]
+    exact Finset.sum_congr rfl fun k _ =>
+      htermL (ZMod.dft (fun j => (f j : ℂ)) k)
+  have hsum :
+      (∑ n : ZMod N, (f n : ℂ) * star (f n : ℂ))
+        = Complex.ofRealHom (∑ n : ZMod N, (f n) ^ 2) := by
+    rw [map_sum Complex.ofRealHom]
+    exact Finset.sum_congr rfl fun n _ => (htermR (f n)).symm
+  have hmain :
+      Complex.ofRealHom (∑ k : ZMod N, ‖ZMod.dft (fun j => (f j : ℂ)) k‖ ^ 2)
+        = (N : ℂ) * Complex.ofRealHom (∑ n : ZMod N, (f n) ^ 2) := by
+    rw [hcast, parseval_complex (fun j : ZMod N => (f j : ℂ)), hsum]
+  have hmul :
+      (N : ℂ) * Complex.ofRealHom (∑ n : ZMod N, (f n) ^ 2)
+        = Complex.ofRealHom ((N : ℝ) * ∑ n : ZMod N, (f n) ^ 2) := by
+    rw [map_mul]
+    rw [show Complex.ofRealHom (N : ℝ) = (N : ℂ) from map_natCast Complex.ofRealHom N]
+  have hBA :
+      (∑ k : ZMod N, ‖ZMod.dft (fun j : ZMod N => (f j : ℂ)) k‖ ^ 2)
+        = (N : ℝ) * ∑ n : ZMod N, (f n) ^ 2 :=
+    Complex.ofReal_injective (by
+      simpa only [Complex.ofRealHom_eq_coe] using hmain.trans hmul)
+  rw [hBA, ← mul_assoc, inv_mul_cancel₀ hN, one_mul]
+
+/-- Frozen claim 3, surrogate half: for admissible `u` (Hermitian and
+unit-modulus), the surrogate-spectrum inverse DFT `g := IDFT(|f̂|·u)` carries the
+same total energy as `f`, `Σₙ gₙ² = Σₙ fₙ²`. `g`'s reality is milestone 2
+(`invDFT_eq_ofReal_re`), so its entries are rendered as `.re`. -/
+theorem parseval_surrogateSpectrum (f : ZMod N → ℝ) (u : ZMod N → ℂ)
+    (hu1 : ∀ k, star (u k) = u (-k)) (hu2 : ∀ k, ‖u k‖ = 1) :
+    ∑ n : ZMod N, (ZMod.dft.symm (surrogateSpectrum f u) n).re ^ 2 =
+      ∑ n : ZMod N, (f n) ^ 2 := by
+  let gr : ZMod N → ℝ := fun n => (ZMod.dft.symm (surrogateSpectrum f u) n).re
+  change ∑ n : ZMod N, gr n ^ 2 = ∑ n : ZMod N, (f n) ^ 2
+  have hX : ∀ k, star (surrogateSpectrum f u k) = surrogateSpectrum f u (-k) :=
+    surrogateSpectrum_star f u hu1
+  have hgr : (fun j : ZMod N => (gr j : ℂ)) = ZMod.dft.symm (surrogateSpectrum f u) :=
+    funext fun j => (invDFT_eq_ofReal_re (surrogateSpectrum f u) hX j).symm
+  have hdft : ZMod.dft (fun j : ZMod N => (gr j : ℂ)) = surrogateSpectrum f u := by
+    rw [hgr, dft_invDFT]
+  have hsum :
+      (∑ k : ZMod N, ‖ZMod.dft (fun j : ZMod N => (gr j : ℂ)) k‖ ^ 2)
+        = ∑ k : ZMod N, ‖ZMod.dft (fun j => (f j : ℂ)) k‖ ^ 2 := by
+    refine Finset.sum_congr rfl fun k _ => ?_
+    rw [hdft, norm_surrogateSpectrum f u hu2 k]
+  rw [parseval gr, hsum, ← parseval f]
+
 end K1Lean

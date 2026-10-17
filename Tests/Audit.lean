@@ -27,3 +27,10 @@ import K1Lean.Surrogate
 #print axioms K1Lean.norm_surrogateSpectrum
 #print axioms K1Lean.norm_dft_invDFT_surrogateSpectrum
 #print axioms K1Lean.phase_surrogateSpectrum
+
+#check @K1Lean.parseval_complex
+#check @K1Lean.parseval
+#check @K1Lean.parseval_surrogateSpectrum
+#print axioms K1Lean.parseval_complex
+#print axioms K1Lean.parseval
+#print axioms K1Lean.parseval_surrogateSpectrum
