@@ -214,7 +214,7 @@ theorem parseval_complex (h : ZMod N → ℂ) :
         = ∑ k : ZMod N, ∑ j : ZMod N, ∑ i : ZMod N,
             (stdAddChar (-(j * k)) * h j) * (stdAddChar (i * k) * star (h i)) := by
           refine Finset.sum_congr rfl fun k _ => ?_
-          rw [hstar k, ZMod.dft_apply, Finset.sum_mul, Finset.mul_sum]
+          rw [hstar k, ZMod.dft_apply, Fintype.sum_mul_sum]
           simp only [smul_eq_mul]
     _ = ∑ k : ZMod N, ∑ j : ZMod N, ∑ i : ZMod N,
             stdAddChar ((i - j) * k) * (h j * star (h i)) := by
@@ -241,7 +241,7 @@ theorem parseval_complex (h : ZMod N → ℂ) :
             · subst hij
               simp
             · have hne : i - j ≠ 0 := fun h => hij (sub_eq_zero.mp h)
-              rw [if_neg hne, if_neg hij]
+              rw [ite_eq_right hne, ite_eq_right hij]
               exact zero_mul _
           refine (Finset.sum_congr rfl fun i _ => hstep i).trans ?_
           exact Fintype.sum_ite_eq' j (fun i => (N : ℂ) * (h j * star (h i)))
@@ -260,7 +260,7 @@ theorem parseval (f : ZMod N → ℝ) :
     rw [Complex.ofRealHom_eq_coe, ← Complex.normSq_eq_norm_sq, Complex.star_def,
       ← Complex.mul_conj]
   have hnorm (r : ℝ) : ‖(r : ℂ)‖ ^ 2 = r ^ 2 := by
-    rw [RCLike.norm_ofReal, sq_abs]
+    rw [← Complex.normSq_eq_norm_sq, Complex.normSq_ofReal, ← pow_two]
   have htermR (r : ℝ) : Complex.ofRealHom (r ^ 2) = (r : ℂ) * star (r : ℂ) := by
     rw [← hnorm r]
     exact htermL (r : ℂ)
