@@ -1,4 +1,6 @@
-import Mathlib.Analysis.Fourier.ZMod
+module
+
+public import Mathlib.Analysis.Fourier.ZMod
 
 /-!
 # Frozen finite-Parseval / surrogate-spectrum statement (v2, amended)
@@ -62,6 +64,8 @@ statement); `angle(0)` at a self-paired bin lands in `{0,π}` anyway; `N = 1`
 gives `g = ±f`; multi-dimensional grids act componentwise, self-paired meaning
 `2kᵢ ≡ 0` for all `i`.
 -/
+
+@[expose] public section
 
 set_option autoImplicit false
 

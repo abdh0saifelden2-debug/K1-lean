@@ -1,5 +1,9 @@
-import Mathlib.Data.Matrix.Basic
-import Mathlib.Data.Real.Basic
+module
+
+public import Mathlib.Data.Matrix.Basic
+public import Mathlib.Basic.Real.Basic
+
+@[expose] public section
 
 set_option autoImplicit false
 

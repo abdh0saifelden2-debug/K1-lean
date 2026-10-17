@@ -2,6 +2,8 @@
 
 Lean skeleton for surrogate tests (finite-dimensional only). Statements first.
 
+Close-out statement-match audit (frozen v2 ↔ Lean, whole file): [STATEMENT_MATCH.md](STATEMENT_MATCH.md).
+
 ## Mathlib facts (handoff inventory, pinned v4.35.0)
 
 Verified against `.lake/packages/mathlib` at the pinned commit; `file:line`
