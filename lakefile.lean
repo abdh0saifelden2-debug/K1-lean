@@ -7,8 +7,10 @@ package «k1-lean» where
 require mathlib from git
   "https://github.com/leanprover-community/mathlib4.git" @ "v4.35.0"
 
+@[default_target]
 lean_lib «K1Lean» where
   srcDir := "Src"
+  globs := #[.andSubmodules `K1Lean]
 
 @[default_target]
 lean_exe «k1-lean» where
