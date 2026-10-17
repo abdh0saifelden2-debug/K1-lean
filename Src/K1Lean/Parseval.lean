@@ -100,4 +100,32 @@ theorem dft_ofReal_conj (f : ZMod N → ℝ) (k : ZMod N) :
   have harg : -(j * -k) = -(-(j * k)) := by ring
   rw [harg]
 
+/-- Milestone 2: for Hermitian `X` (`star (X k) = X (-k)`, the shape of a real
+field's spectrum), the inverse-DFT output is self-conjugate — the Lean form of
+"`g` is real" in the frozen text. The `Equiv.neg` reindex is discharged inside
+mathlib's `dft_comp_neg`; the `1/N` scalar is pinned by the named `hN`, not by
+tactical search. -/
+theorem invDFT_selfConj (X : ZMod N → ℂ) (hX : ∀ k, star (X k) = X (-k)) (k : ZMod N) :
+    star (ZMod.dft.symm X k) = ZMod.dft.symm X k := by
+  have hN : star ((N : ℂ)⁻¹) = (N : ℂ)⁻¹ := by
+    rw [star_inv₀, star_natCast]
+  have hfun : (fun j : ZMod N => star (X j)) = fun j => X (-j) :=
+    funext fun j => hX j
+  rw [ZMod.invDFT_apply', smul_eq_mul, star_mul', hN, dft_star, neg_neg, hfun]
+  exact congrArg (fun t => (N : ℂ)⁻¹ * t) (congrFun (ZMod.dft_comp_neg X) k)
+
+/-- Milestone 2 corollary: reality, imaginary-part form. -/
+theorem invDFT_im_eq_zero (X : ZMod N → ℂ) (hX : ∀ k, star (X k) = X (-k)) (k : ZMod N) :
+    (ZMod.dft.symm X k).im = 0 := by
+  rw [← Complex.conj_eq_iff_im]
+  simpa only [Complex.star_def] using invDFT_selfConj X hX k
+
+/-- Milestone 2 corollary: reality, packaged (frozen claim 1) — the inverse-DFT
+output equals its own real-part coercion. -/
+theorem invDFT_eq_ofReal_re (X : ZMod N → ℂ) (hX : ∀ k, star (X k) = X (-k)) (k : ZMod N) :
+    ZMod.dft.symm X k = ((ZMod.dft.symm X k).re : ℂ) := by
+  apply Complex.ext
+  · rw [Complex.ofReal_re]
+  · rw [invDFT_im_eq_zero X hX k, Complex.ofReal_im]
+
 end K1Lean
