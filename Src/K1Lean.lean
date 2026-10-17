@@ -1,2 +1,4 @@
-import K1Lean.Parseval
-import K1Lean.Surrogate
+module
+
+public import K1Lean.Parseval
+public import K1Lean.Surrogate
