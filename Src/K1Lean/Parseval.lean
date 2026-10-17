@@ -128,4 +128,52 @@ theorem invDFT_eq_ofReal_re (X : ZMod N → ℂ) (hX : ∀ k, star (X k) = X (-k
   · rw [Complex.ofReal_re]
   · rw [invDFT_im_eq_zero X hX k, Complex.ofReal_im]
 
+/-- Frozen setting: the surrogate spectrum `Xₖ := |f̂ₖ|·uₖ` — mode modulus of
+the real field's DFT carried by the phase field `u`. -/
+noncomputable def surrogateSpectrum (f : ZMod N → ℝ) (u : ZMod N → ℂ) : ZMod N → ℂ :=
+  fun k => (‖ZMod.dft (fun j => (f j : ℂ)) k‖ : ℂ) * u k
+
+/-- Milestone 3 bridge: with Hermitian `u`, the surrogate spectrum is Hermitian
+(`star(|f̂ₖ|·uₖ) = |f̂ₖ|·u₋ₖ`; the amplitude switch `|f̂₋ₖ| = |f̂ₖ|` is
+milestone 1's Hermitian symmetry of `f̂`). -/
+theorem surrogateSpectrum_star (f : ZMod N → ℝ) (u : ZMod N → ℂ)
+    (hu : ∀ k, star (u k) = u (-k)) (k : ZMod N) :
+    star (surrogateSpectrum f u k) = surrogateSpectrum f u (-k) := by
+  have hreal (r : ℝ) : star (r : ℂ) = (r : ℂ) := RCLike.conj_ofReal r
+  have hnorm : ‖ZMod.dft (fun j => (f j : ℂ)) k‖ =
+      ‖ZMod.dft (fun j => (f j : ℂ)) (-k)‖ := by
+    rw [← dft_ofReal_conj f k, Complex.star_def, Complex.norm_conj]
+  dsimp only [surrogateSpectrum]
+  rw [star_mul', hreal, hu k, hnorm]
+
+/-- Frozen claim 2, exactness half: `DFT(g) = X` exactly for `g := IDFT(X)`. -/
+theorem dft_invDFT (X : ZMod N → ℂ) : ZMod.dft (ZMod.dft.symm X) = X :=
+  ZMod.dft.apply_symm_apply X
+
+/-- The surrogate spectrum carries the right per-mode amplitudes: with
+unit-modulus `u`, `‖Xₖ‖ = |f̂ₖ|`. -/
+theorem norm_surrogateSpectrum (f : ZMod N → ℝ) (u : ZMod N → ℂ)
+    (hu2 : ∀ k, ‖u k‖ = 1) (k : ZMod N) :
+    ‖surrogateSpectrum f u k‖ = ‖ZMod.dft (fun j => (f j : ℂ)) k‖ := by
+  have hnormR (r : ℝ) : ‖(r : ℂ)‖ = |r| := RCLike.norm_ofReal r
+  dsimp only [surrogateSpectrum]
+  rw [norm_mul, hu2 k, mul_one, hnormR, abs_of_nonneg (norm_nonneg _)]
+
+/-- Frozen claim 2, magnitude half: per mode, `|DFT(g)ₖ| = |f̂ₖ|`. -/
+theorem norm_dft_invDFT_surrogateSpectrum (f : ZMod N → ℝ) (u : ZMod N → ℂ)
+    (hu2 : ∀ k, ‖u k‖ = 1) (k : ZMod N) :
+    ‖ZMod.dft (ZMod.dft.symm (surrogateSpectrum f u)) k‖ =
+      ‖ZMod.dft (fun j => (f j : ℂ)) k‖ := by
+  rw [dft_invDFT]
+  exact norm_surrogateSpectrum f u hu2 k
+
+/-- Frozen claim 2, phase half, division-free form: `Xₖ = ‖Xₖ‖·uₖ` — phase
+recovery by normalization; at zero modes this reads `0 = 0·uₖ`, and
+`Complex.angle` never enters. -/
+theorem phase_surrogateSpectrum (f : ZMod N → ℝ) (u : ZMod N → ℂ)
+    (hu2 : ∀ k, ‖u k‖ = 1) (k : ZMod N) :
+    surrogateSpectrum f u k = (‖surrogateSpectrum f u k‖ : ℂ) * u k := by
+  rw [norm_surrogateSpectrum f u hu2 k]
+  rfl
+
 end K1Lean
