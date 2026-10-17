@@ -88,9 +88,16 @@ theorem dft_star (Φ : ZMod N → ℂ) (k : ZMod N) :
 /-- Milestone 1: the DFT of a real field is Hermitian, `(𝓕f k)† = 𝓕f (−k)`. -/
 theorem dft_ofReal_conj (f : ZMod N → ℝ) (k : ZMod N) :
     star (ZMod.dft (fun j => (f j : ℂ)) k) = ZMod.dft (fun j => (f j : ℂ)) (-k) := by
-  rw [dft_star]
-  congr 1
-  funext j
-  exact RCLike.conj_ofReal (f j)
+  have hchar (x : ZMod N) :
+      starRingEnd ℂ (stdAddChar (N := N) x) = stdAddChar (-x) :=
+    (AddChar.map_neg_eq_conj (stdAddChar (N := N)) x).symm
+  have hreal (r : ℝ) : star (r : ℂ) = (r : ℂ) :=
+    RCLike.conj_ofReal r
+  simp only [ZMod.dft_apply, smul_eq_mul]
+  rw [← starRingEnd_apply, map_sum]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  rw [map_mul, hchar, starRingEnd_apply, hreal]
+  have harg : -(j * -k) = -(-(j * k)) := by ring
+  rw [harg]
 
 end K1Lean
