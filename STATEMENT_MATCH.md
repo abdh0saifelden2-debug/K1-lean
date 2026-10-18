@@ -19,7 +19,7 @@ only on `[propext, Classical.choice, Quot.sound]`.
 | `N ≥ 1`, indices modulo `N` | `{N : ℕ}` with `[NeZero N]`; index type `ZMod N` |
 | `f : Z/N → ℝ` | `f : ZMod N → ℝ` |
 | numpy convention: `f̂ₖ = Σₙ fₙ e^(−2πikn/N)`, `IDFT(X)ₙ = N⁻¹ Σₖ Xₖ e^(+2πikn/N)` | `ZMod.dft` and `ZMod.dft.symm` (mathlib v4.35.0, pinned by `lake-manifest.json`); sign convention fixed by `dft_star`/`dft_ofReal_conj`, `1/N` normalization fixed by `parseval` (`N⁻¹` appears exactly once) |
-| both compositions are identities | `dft_invDFT` |
+| both compositions are identities | `dft_invDFT` covers DFT∘IDFT; IDFT∘DFT = id is `LinearEquiv.symm_apply_apply` (structural from `dft` being a linear equivalence) |
 | finite Parseval: `Σₙ fₙ² = N⁻¹ Σₖ |f̂ₖ|²` | `parseval` (engine: `parseval_complex`) |
 
 ## Admissible phase factors
@@ -92,7 +92,7 @@ signed-off statement list changed.
 |---|---|
 | zero modes: amplitude `0` annihilates `uₖ`; no division anywhere | `phase_surrogateSpectrum` is division-free; `surrogateSpectrum` multiplies by `u k`, it never divides |
 | `angle(0)` at a self-paired bin lands in `{0,π}` | `Complex.angle` is not used at all |
-| `N = 1` gives `g = ±f` | the general theorems apply to `N = 1` (`NeZero 1` holds); no special case is needed or claimed separately |
+| `N = 1` gives `g = ±f` | follows from `hu1`+`hu2`; the intermediate fact `star z = z ∧ ‖z‖ = 1 → z = ±1` is not separately stated. The general theorems apply (`NeZero 1` holds); no special case is claimed separately |
 | multi-dimensional grids act componentwise, self-paired meaning `2kᵢ ≡ 0` for all `i` | the formalization is the 1D `ZMod N` statement; the multidimensional statement is the per-axis application of it and is not separately formalized |
 
 ## Whole-file declaration inventory (`Src/K1Lean/Parseval.lean`)
