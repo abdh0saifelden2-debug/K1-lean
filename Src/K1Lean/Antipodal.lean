@@ -117,7 +117,7 @@ theorem antipodalPhase_star (f : ZMod N → ℝ) (k : ZMod N) :
   · have hnk : F (-k) = 0 := (hzero k).mp hk
     have hk' : ZMod.dft (fun j => (f j : ℂ)) k = 0 := hk
     have hnk' : ZMod.dft (fun j => (f j : ℂ)) (-k) = 0 := hnk
-    simp [antipodalPhase, F, hk', hnk']
+    simp [antipodalPhase, hk', hnk']
   · have hnk : F (-k) ≠ 0 := fun h => hk ((hzero k).mpr h)
     have hk' : ZMod.dft (fun j => (f j : ℂ)) k ≠ 0 := hk
     have hnk' : ZMod.dft (fun j => (f j : ℂ)) (-k) ≠ 0 := hnk
@@ -143,7 +143,7 @@ theorem antipodalPhase_norm (f : ZMod N → ℝ) (k : ZMod N) :
   let F : ZMod N → ℂ := fun k => ZMod.dft (fun j => (f j : ℂ)) k
   by_cases hk : F k = 0
   · have hk' : ZMod.dft (fun j => (f j : ℂ)) k = 0 := hk
-    simp [antipodalPhase, F, hk']
+    simp [antipodalPhase, hk']
   · have hk' : ZMod.dft (fun j => (f j : ℂ)) k ≠ 0 := hk
     have hpos : 0 < ‖F k‖ := norm_pos_iff.mpr hk
     have hnormR (r : ℝ) : ‖(r : ℂ)‖ = |r| := RCLike.norm_ofReal r
@@ -172,7 +172,7 @@ theorem surrogateSpectrum_antipodalPhase (f : ZMod N → ℝ) (k : ZMod N) :
   let F : ZMod N → ℂ := fun k => ZMod.dft (fun j => (f j : ℂ)) k
   by_cases hk : F k = 0
   · have hk' : ZMod.dft (fun j => (f j : ℂ)) k = 0 := hk
-    simp [surrogateSpectrum, antipodalPhase, F, hk']
+    simp [surrogateSpectrum, antipodalPhase, hk']
   · have hk' : ZMod.dft (fun j => (f j : ℂ)) k ≠ 0 := hk
     have hpos : 0 < ‖F k‖ := norm_pos_iff.mpr hk
     have hcast : ((‖F k‖ : ℝ) : ℂ) ≠ 0 :=
@@ -199,8 +199,7 @@ theorem antipodal (f : ZMod N → ℝ) :
         = -ZMod.dft.symm (ZMod.dft (fun j => (f j : ℂ))) := by
     change ZMod.dft.symm (-(ZMod.dft (fun j => (f j : ℂ))))
         = -(ZMod.dft.symm (ZMod.dft (fun j => (f j : ℂ))))
-    simpa using
-      (ZMod.dft.symm.toLinearMap.map_neg (ZMod.dft (fun j => (f j : ℂ))))
+    exact ZMod.dft.symm.toLinearMap.map_neg (ZMod.dft (fun j => (f j : ℂ)))
   rw [hX, hneg]
   funext n
   simp [ZMod.dft.symm_apply_apply]
