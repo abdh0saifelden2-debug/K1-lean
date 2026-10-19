@@ -1,11 +1,11 @@
-# Statement match: frozen v2 ↔ `K1Lean.Parseval`
+# Statement match: frozen statements ↔ `K1Lean`
 
-This is the close-out audit for the frozen finite-Parseval / surrogate-spectrum
-statement. The frozen text is the module docstring at the top of
-`Src/K1Lean/Parseval.lean` (amended v2, 2026-10-17). Every line of that text is
-mapped below to its Lean counterpart, or explicitly marked as commentary /
-modeling text that makes no theorem-level claim. The declaration inventory at
-the end is exhaustive for `Parseval.lean`.
+This file contains the close-out audits for the frozen finite-Parseval /
+surrogate-spectrum statement (v2, 2026-10-17) and the frozen antipodal
+statement (v1, 2026-10-19). Each frozen text is the module docstring at the top
+of its Lean file; every line is mapped below to its Lean counterpart, or
+explicitly marked as commentary / modeling text that makes no theorem-level
+claim. The declaration inventories are exhaustive for the respective files.
 
 Verification runs: GitHub Actions (build → exe → audit → semantics → cheat
 scan) and an independent Kaggle build from a dataset snapshot. Signatures and
@@ -151,3 +151,85 @@ is the separate placeholder skeleton; it has no Lean connection to
 5. M5 hypothesis correction (above) is the only deviation from the signed-off
    signatures, and it only *adds* hypotheses required to state the DFT-level
    claims on the `.re` field.
+
+---
+
+# Frozen antipodal statement (v1, 2026-10-19) ↔ `K1Lean.Antipodal`
+
+This is the statement-match audit for the antipodal lemma. The frozen text is
+the module docstring at the top of `Src/K1Lean/Antipodal.lean` (v1,
+2026-10-19). The declaration inventory at the end is exhaustive for that file.
+
+Attacked in-thread before freeze: (i) "maximally wrong in any norm" was
+narrowed to L2-only maximality; (ii) the inverted "division-free" wording was
+corrected; (iii) the typical/random-draw fence was added to "Not claimed".
+
+## Setting
+
+| frozen line | Lean counterpart |
+|---|---|
+| `N ≥ 1`, indices modulo `N`; `f : Z/N → ℝ` | `{N : ℕ}` with `[NeZero N]`; `f : ZMod N → ℝ` |
+| numpy forward/inverse convention | the same pinned `ZMod.dft` / `ZMod.dft.symm` as the Parseval statement (audited above) |
+| `u` admissible: `star(uₖ) = u(−k)`, `|uₖ| = 1` | hypothesis pair `hu1`/`hu2`, as in the Parseval audit; here the pair is *proved* for `u^⊥` in `antipodalPhase_admissible` |
+
+## Statement
+
+| frozen claim | Lean counterpart |
+|---|---|
+| `u^⊥ₖ = −f̂ₖ/|f̂ₖ|` for `f̂ₖ ≠ 0`, `1` for `f̂ₖ = 0` | definition `antipodalPhase` (zero branch explicit; no division by zero) |
+| 1. `u^⊥` admissible | `antipodalPhase_admissible`, components `antipodalPhase_star` and `antipodalPhase_norm` |
+| zero-set symmetry `f̂ₖ = 0 ↔ f̂₋ₖ = 0` | internal step in `antipodalPhase_star`, derived from `dft_ofReal_conj` (M1); no DFT sum is unfolded |
+| self-paired bins are real; the zero branch is real and unit | descriptive; follows from `dft_ofReal_conj` and the branch value `1` |
+| `N = 1` | no special case; `[NeZero 1]` and the same case split |
+| 2. `|f̂ₖ|·u^⊥ₖ = −f̂ₖ`, zero modes `0 = −0` | `surrogateSpectrum_antipodalPhase` |
+| 3. `g = −f` as complex functions | `antipodal` (`ZMod.dft.symm (surrogateSpectrum f u^⊥) = fun n => −(f n : ℂ)`) |
+| 3. pointwise on the real field, `g.re n = −f n` | `congrFun (antipodal f) n` + `Complex.neg_re` / `Complex.ofReal_re`, used in `antipodal_energy` |
+| 4. `Σ (g.re − f)² = 4 Σ f²` | `antipodal_energy` |
+| 4. universal L2 bound `‖g'.re − f‖₂ ≤ 2‖f‖₂` for every admissible `u'` | mapped prose (below), deliberately not a declaration |
+
+## Mapped prose
+
+The universal L2 sentence is **considered and deliberately scoped out**, not
+missed. The ingredients are already certified:
+
+| prose claim | Lean counterpart |
+|---|---|
+| every admissible `u'` yields `Σ (g'.re)² = Σ f²` | `parseval_surrogateSpectrum f u' hu1 hu2` (frozen claim 3 of the Parseval statement) |
+| hence `‖g'.re − f‖₂ ≤ ‖g'.re‖₂ + ‖f‖₂ = 2‖f‖₂` | triangle inequality on the finite L2 norm; the equality case is the antipodal `u^⊥` (`antipodal_energy`) |
+
+A verifier who wants the universal bound machine-checked gets a fifth lemma
+(Cauchy–Schwarz on the finite sum), not a rewrite of the frozen statement.
+
+## Register
+
+| frozen line | status |
+|---|---|
+| the family contains the pointwise-negated field | `antipodal` + `antipodalPhase_admissible` |
+| L2 distance maximal; pointwise error `2|f|` | `antipodal_energy`; the pointwise error is the `.re` corollary |
+| the certified lemma concerns extent, not center | no declaration about typical draws; `|r| = 0.07` remains empirical |
+
+## Not claimed (confirmed absent from `Antipodal.lean`)
+
+| frozen "Not claimed" line | confirmation |
+|---|---|
+| typical or random draws are near-antipodal | no declaration or hypothesis about draws, randomness, or the ensemble median |
+| maximality in any norm other than L2 | no sup-norm or other-norm statement exists |
+| a particular finite pointwise-error bound | no such declaration exists |
+
+## Declaration inventory (`Src/K1Lean/Antipodal.lean`)
+
+All declarations are in namespace `K1Lean`.
+
+| declaration | role |
+|---|---|
+| `antipodalPhase` | definition of `u^⊥`; docstring carries the paper-level sentence |
+| `antipodalPhase_star` | claim 1 (Hermitian), internal helper |
+| `antipodalPhase_norm` | claim 1 (unit modulus), internal helper |
+| `antipodalPhase_admissible` | claim 1 (packaged) |
+| `surrogateSpectrum_antipodalPhase` | claim 2 (per-mode negation) |
+| `antipodal` | claim 3 (`g = −f`) |
+| `antipodal_energy` | claim 4 (L2 equality) |
+
+`Tests/Audit.lean` prints signatures and `#print axioms` for the four public
+declarations; every audited declaration depends only on
+`[propext, Classical.choice, Quot.sound]`.

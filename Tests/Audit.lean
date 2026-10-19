@@ -1,3 +1,4 @@
+import K1Lean.Antipodal
 import K1Lean.Parseval
 import K1Lean.Surrogate
 
@@ -60,3 +61,13 @@ import K1Lean.Surrogate
 #print axioms K1Lean.bin_energy_surrogateSpectrum
 #print axioms K1Lean.bin_energy_mulSurrogate
 #print axioms K1Lean.parseval_mulSurrogate
+
+#check @K1Lean.antipodalPhase
+#check @K1Lean.antipodalPhase_admissible
+#check @K1Lean.surrogateSpectrum_antipodalPhase
+#check @K1Lean.antipodal
+#check @K1Lean.antipodal_energy
+#print axioms K1Lean.antipodalPhase_admissible
+#print axioms K1Lean.surrogateSpectrum_antipodalPhase
+#print axioms K1Lean.antipodal
+#print axioms K1Lean.antipodal_energy
