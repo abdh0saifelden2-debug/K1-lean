@@ -279,7 +279,7 @@ theorem dft2vec_symm_apply (Φ : ZMod N × ZMod N → ℂ) (k₀ k₁ : ZMod N) 
     simp only [LinearEquiv.coe_curry_symm, LinearEquiv.coe_curry,
       Function.uncurry_apply_pair, Function.curry_apply,
       LinearEquiv.piCongrRight_symm, LinearEquiv.piCongrRight_apply,
-      ZMod.invDFT_apply, smul_eq_mul]
+      ZMod.invDFT_apply, Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
   rw [hraw]
   simp only [Finset.mul_sum]
   apply Finset.sum_congr rfl
@@ -310,17 +310,19 @@ theorem dft2_apply (X : TwoTorus N → ℂ) (k : TwoTorus N) :
     have h1 : (∑ i, ∑ j, stdAddChar (-(i * k 0)) *
         (stdAddChar (-(j * k 1)) *
           X ((finTwoArrowEquiv (ZMod N)).symm (i, j)))) = ∑ p, f p := by
-      rw [← Fintype.sum_prod_type f]
-      rfl
+      exact (Fintype.sum_prod_type f).symm
     have h2 : (∑ p, f p) = ∑ x, g x := by
-      have hx : (∑ x, g x) = ∑ x, f ((finTwoArrowEquiv (ZMod N)) x) := by
-        refine Finset.sum_congr rfl fun x _ => ?_
-        simp [f, g, finTwoArrowEquiv]
-        rw [show -(x 0 * k 0 + x 1 * k 1) =
-          -(x 0 * k 0) + -(x 1 * k 1) by ring]
-        rw [AddChar.map_add_eq_mul]
-        ring
-      rw [hx, Equiv.sum_comp]
+      rw [← Equiv.sum_comp (finTwoArrowEquiv (ZMod N)) f]
+      refine Finset.sum_congr rfl fun x _ => ?_
+      have hx0 : (finTwoArrowEquiv (ZMod N)) x = (x 0, x 1) := by
+        ext <;> simp [finTwoArrowEquiv]
+      have hx1 : (finTwoArrowEquiv (ZMod N)).symm (x 0, x 1) = x := by
+        rw [← hx0, Equiv.symm_apply_apply]
+      simp only [f, g, hx0, hx1]
+      rw [show -(x 0 * k 0 + x 1 * k 1) =
+        -(x 0 * k 0) + -(x 1 * k 1) by ring]
+      rw [AddChar.map_add_eq_mul]
+      ring
     exact h1.trans h2
   change (∑ i, ∑ j, stdAddChar (-(i * k 0)) *
       (stdAddChar (-(j * k 1)) *
@@ -337,7 +339,7 @@ theorem dft2_symm_apply (X : TwoTorus N → ℂ) (k : TwoTorus N) :
   rw [h1, dft2vec_symm_apply]
   congr 1
   rw [dft2Fun]
-  simp only [smul_eq_mul]
+  simp only [smul_eq_mul, uncurryT_apply]
   let f : ZMod N × ZMod N → ℂ := fun p =>
     stdAddChar (p.2 * k 1 + p.1 * k 0) *
       X ((finTwoArrowEquiv (ZMod N)).symm p)
@@ -348,14 +350,16 @@ theorem dft2_symm_apply (X : TwoTorus N → ℂ) (k : TwoTorus N) :
         X ((finTwoArrowEquiv (ZMod N)).symm (i, j))) = ∑ x, g x := by
     have h1 : (∑ j, ∑ i, stdAddChar (j * k 1 + i * k 0) *
         X ((finTwoArrowEquiv (ZMod N)).symm (i, j))) = ∑ p, f p := by
-      rw [← Fintype.sum_prod_type f]
-      rfl
+      exact (Fintype.sum_prod_type_right f).symm
     have h2 : (∑ p, f p) = ∑ x, g x := by
-      have hx : (∑ x, g x) = ∑ x, f ((finTwoArrowEquiv (ZMod N)) x) := by
-        refine Finset.sum_congr rfl fun x _ => ?_
-        simp [f, g, finTwoArrowEquiv]
-        rw [show x 1 * k 1 + x 0 * k 0 = x 0 * k 0 + x 1 * k 1 by ring]
-      rw [hx, Equiv.sum_comp]
+      rw [← Equiv.sum_comp (finTwoArrowEquiv (ZMod N)) f]
+      refine Finset.sum_congr rfl fun x _ => ?_
+      have hx0 : (finTwoArrowEquiv (ZMod N)) x = (x 0, x 1) := by
+        ext <;> simp [finTwoArrowEquiv]
+      have hx1 : (finTwoArrowEquiv (ZMod N)).symm (x 0, x 1) = x := by
+        rw [← hx0, Equiv.symm_apply_apply]
+      simp only [f, g, hx0, hx1]
+      rw [show x 1 * k 1 + x 0 * k 0 = x 0 * k 0 + x 1 * k 1 by ring]
     exact h1.trans h2
   rw [hsum]
   apply Finset.sum_congr rfl
@@ -377,7 +381,9 @@ theorem dft2_star (Φ : TwoTorus N → ℂ) (k : TwoTorus N) :
   refine Finset.sum_congr rfl fun x _ => ?_
   rw [map_mul, hchar, starRingEnd_apply]
   rw [show -(-(x 0 * k 0 + x 1 * k 1)) = x 0 * k 0 + x 1 * k 1 by ring]
-  have harg' : -(x 0 * -k 0 + x 1 * -k 1) = x 0 * k 0 + x 1 * k 1 := by ring
+  have harg' : -(x 0 * (-k) 0 + x 1 * (-k) 1) = x 0 * k 0 + x 1 * k 1 := by
+    simp only [Pi.neg_apply]
+    ring
   rw [harg']
 
 /-- Reality bridge: the DFT of a real field is Hermitian. -/
@@ -471,8 +477,9 @@ theorem Phat_neg (hN : Odd N) (k : TwoTorus N) : Phat (-k) = Phat k := by
   · rw [hk]
     simp
   · have hnk : -k ≠ 0 := neg_ne_zero.mpr hk
-    simpa [Phat, hk, hnk, kappa_neg hN k] using
-      leraySymbol_neg (kappa k) (kappa_dot_ne_zero k hk)
+    simp only [Phat, hk, hnk]
+    rw [kappa_neg hN k]
+    exact leraySymbol_neg (kappa k) (kappa_dot_ne_zero k hk)
 
 /-- Complexified evenness. -/
 theorem PhatC_neg (hN : Odd N) (k : TwoTorus N) : PhatC (-k) = PhatC k := by
@@ -504,17 +511,17 @@ theorem dft2Pi_symm_apply (v : Fin 2 → TwoTorus N → ℂ) (j : Fin 2) :
 /-- Pointwise multiplication by the Leray symbol on vector fields. -/
 noncomputable def mulPhat :
     (Fin 2 → TwoTorus N → ℂ) →ₗ[ℂ] (Fin 2 → TwoTorus N → ℂ) where
-  toFun W k := PhatC k *ᵥ fun j => W j k
+  toFun W j k := (PhatC k *ᵥ fun l => W l k) j
   map_add' W W' := by
-    funext k
+    funext j k
     simp [Matrix.mulVec_add]
   map_smul' c W := by
-    funext k
+    funext j k
     simp [Matrix.mulVec_smul]
 
 @[simp]
-theorem mulPhat_apply (W : Fin 2 → TwoTorus N → ℂ) (k : TwoTorus N) :
-    mulPhat W k = PhatC k *ᵥ fun j => W j k :=
+theorem mulPhat_apply (W : Fin 2 → TwoTorus N → ℂ) (j : Fin 2) (k : TwoTorus N) :
+    mulPhat W j k = (PhatC k *ᵥ fun l => W l k) j :=
   rfl
 
 /-- The complex vector-field Leray operator. -/
@@ -584,7 +591,7 @@ theorem Pc_ofReal (hN : Odd N) (v : Fin 2 → TwoTorus N → ℝ) :
   exact idft2_eq_ofReal_re Yj hY x
 
 /-- Frozen claim 2 (complex level): `Pc` is idempotent. -/
-theorem Pc_idem : Pc.comp Pc = Pc := by
+theorem Pc_idem : (Pc (N := N)).comp (Pc (N := N)) = Pc (N := N) := by
   ext v j
   simp only [LinearMap.comp_apply, Pc_apply]
   apply dft2.injective
@@ -603,7 +610,8 @@ theorem Pc_idem : Pc.comp Pc = Pc := by
   rw [Matrix.mulVec_mulVec, PhatC_idem]
 
 /-- Frozen claim 2 (real level): `P` is idempotent. -/
-theorem P_idem (hN : Odd N) : P.comp P = P := by
+theorem P_idem (hN : Odd N) :
+    (P (N := N)).comp (P (N := N)) = P (N := N) := by
   ext v j x
   simp only [LinearMap.comp_apply, P_apply]
   have hpv : (fun j' y => (P v j' y : ℂ)) =
@@ -677,7 +685,8 @@ theorem surrogateField_reality (f : TwoTorus N → ℝ) (u : TwoTorus N → ℂ)
       surrogateSpectrum2 f u (-k) := by
     intro k
     dsimp only [surrogateSpectrum2]
-    rw [star_mul', RCLike.conj_ofReal]
+    rw [star_mul']
+    simp only [RCLike.conj_ofReal]
     have hnorm : ‖dft2 (fun x => (f x : ℂ)) k‖ =
         ‖dft2 (fun x => (f x : ℂ)) (-k)‖ := by
       rw [← dft2_ofReal_conj f k, norm_star]
@@ -696,7 +705,8 @@ noncomputable def P' : (Fin 2 × TwoTorus N → ℝ) →ₗ[ℝ]
     (P.comp (LinearEquiv.curry ℝ ℝ (Fin 2) (TwoTorus N)).toLinearMap)
 
 /-- Idempotence of the curried bundle. -/
-theorem P'_comp (hN : Odd N) : P'.comp P' = P' := by
+theorem P'_comp (hN : Odd N) :
+    (P' (N := N)).comp (P' (N := N)) = P' (N := N) := by
   have hpp : ∀ y : Fin 2 → TwoTorus N → ℝ, P (P y) = P y :=
     fun y => DFunLike.congr_fun (P_idem hN) y
   ext x
@@ -733,9 +743,11 @@ theorem perMode_break (hN : Odd N) (h3 : 3 ≤ N) :
   have hkappa : kappa kstar = ![1, 0] := by
     funext i
     fin_cases i
-    · simp only [kappa, kstar]
-      rw [ZMod.valMinAbs_natCast_of_le_half (n := N) (a := 1)
-        (by omega : 1 ≤ N / 2)]
+    · change ((kstar 0).valMinAbs : ℝ) = (1 : ℝ)
+      rw [show kstar 0 = (1 : ZMod N) by rfl,
+        ZMod.valMinAbs_natCast_of_le_half (n := N) (a := 1)
+          (by omega : 1 ≤ N / 2)]
+      norm_num
     · simp [kappa, kstar]
   let X : TwoTorus N → Fin 2 → ℂ := fun k j =>
     if k = kstar ∨ k = -kstar then (![1, 0] : Fin 2 → ℂ) j else 0
@@ -803,21 +815,22 @@ theorem perMode_break (hN : Odd N) (h3 : 3 ≤ N) :
     have hW : (fun l => dft2 (fun x => (v l x : ℂ)) kstar) = ![1, 0] := by
       simpa [v] using hg1
     rw [hW]
-    have hq0 : (![1, 0] : Fin 2 → ℝ) ⬝ᵥ ![1, 0] ≠ 0 := by
-      norm_num [dotProduct, Fin.sum_univ_two]
     have hP : PhatC kstar =
-        (leraySymbol (![1, 0] : Fin 2 → ℝ) hq0).map (algebraMap ℝ ℂ) := by
-      simpa [hkappa] using PhatC_eq_leraySymbol kstar hkstar
+        (leraySymbol (kappa kstar) (kappa_dot_ne_zero kstar hkstar)).map
+          (algebraMap ℝ ℂ) :=
+      PhatC_eq_leraySymbol kstar hkstar
     rw [hP]
+    have hvec : (fun l => (kappa kstar l : ℂ)) = (![1, 0] : Fin 2 → ℂ) := by
+      funext l
+      rw [hkappa]
+      fin_cases l <;> simp
     have hzero := RingHom.map_mulVec (algebraMap ℝ ℂ)
-      (leraySymbol (![1, 0] : Fin 2 → ℝ) hq0) (![1, 0] : Fin 2 → ℝ) j
+      (leraySymbol (kappa kstar) (kappa_dot_ne_zero kstar hkstar))
+      (kappa kstar) j
     rw [leraySymbol_mulVec_self] at hzero
     simp only [Pi.zero_apply, map_zero] at hzero
-    have hcoe : (fun l => algebraMap ℝ ℂ ((![1, 0] : Fin 2 → ℝ) l)) =
-        (![1, 0] : Fin 2 → ℂ) := by
-      funext l
-      fin_cases l <;> simp
-    simpa [Function.comp_def, hcoe] using hzero.symm
+    rw [hvec] at hzero
+    simpa using hzero.symm
   refine ⟨f, kstar, hkstar, hf1, hkappa, ?_⟩
   have hP0 : (fun j => dft2 (fun x =>
       (P (fun j' => surrogateField (f j') (fun _ => 1)) j x : ℂ)) kstar) = 0 := by
