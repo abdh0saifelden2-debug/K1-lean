@@ -1,8 +1,9 @@
 # Statement match: frozen statements ↔ `K1Lean`
 
 This file contains the close-out audits for the frozen finite-Parseval /
-surrogate-spectrum statement (v2, 2026-10-17) and the frozen antipodal
-statement (v1, 2026-10-19). Each frozen text is the module docstring at the top
+surrogate-spectrum statement (v2, 2026-10-17), the frozen antipodal
+statement (v1, 2026-10-19), and the frozen discrete Leray symbol statement
+(v1, 2026-10-20). Each frozen text is the module docstring at the top
 of its Lean file; every line is mapped below to its Lean counterpart, or
 explicitly marked as commentary / modeling text that makes no theorem-level
 claim. The declaration inventories are exhaustive for the respective files.
@@ -233,3 +234,111 @@ All declarations are in namespace `K1Lean`.
 `Tests/Audit.lean` prints signatures and `#print axioms` for the four public
 declarations; every audited declaration depends only on
 `[propext, Classical.choice, Quot.sound]`.
+
+---
+
+# Frozen discrete Leray symbol statement (v1, 2026-10-20) ↔ `K1Lean.Leray`
+
+This is the statement-match audit for the discrete Leray symbol (layer 2a).
+The frozen text is the module docstring at the top of `Src/K1Lean/Leray.lean`
+(v1, 2026-10-20). The declaration inventory at the end is exhaustive for that
+file.
+
+Attacked in-thread before freeze (two rounds). First round: the dimensional
+flaw (a 1D torus cannot support `κκᵀ`; the paper's two-torus instantiation
+takes `d = 2`, while 2a is abstract in `d`) and the split into 2a/2b. Second
+round, attacking the feasibility note: the even-N Nyquist pathology
+(`natAbs_valMinAbs_neg` does not give `S(−k) = S(k)` at even `N`; counterexample
+`κ₁ = (N/2, 1)` vs `κ₂ = (N/2, −1)`). Frozen with three amendments: (i)
+file/proof order 1, 3, 2; (ii) the definition carries `hq : κ ⬝ᵥ κ ≠ 0`;
+(iii) `[NeZero d]`.
+
+## Setting
+
+| frozen line | Lean counterpart |
+|---|---|
+| `d ≥ 1` | `{d : ℕ}` with `[NeZero d]`; index type `Fin d` |
+| `κ : Fin d → ℝ` | `κ : Fin d → ℝ` |
+| `q(κ) := Σᵢ κᵢ² = κ ⬝ᵥ κ` | `Matrix.dotProduct κ κ` (notation `⬝ᵥ`) |
+| `hq` (nonzero) | explicit definition argument `hq : κ ⬝ᵥ κ ≠ 0` |
+| `S(κ) := I − κκᵀ/q(κ)` | `leraySymbol κ hq := 1 - Matrix.of (fun i j => κ i * κ j / (κ ⬝ᵥ κ))` |
+
+## Statement
+
+| frozen claim | Lean counterpart |
+|---|---|
+| 1. column: `S(κ) *ᵥ κ = 0` | `leraySymbol_mulVec_self` |
+| 2. row: `κ ᵥ* S(κ) = 0` | `leraySymbol_vecMul_self`, proved from claims 1 and 3 via `Matrix.mulVec_transpose` |
+| 3. symmetric: `S(κ)ᵀ = S(κ)` | `leraySymbol_transpose` |
+| 4. idempotent: `S(κ) * S(κ) = S(κ)` | `leraySymbol_idem` (rank-one collapse `(κκᵀ)² = q·κκᵀ`) |
+| 5. even: `S(−κ) = S(κ)` | `leraySymbol_neg` |
+| file/proof order 1, 3, 2, 4, 5 | declarations appear in that order; claim 2 has no forward reference |
+
+## Mapped prose: claim 8 (self-adjointness) — considered and cut
+
+Self-adjointness of the Leray projector `P` is **deliberately not claimed** at
+this layer. It is recorded here as mapped-prose/optional, not as a missed line:
+the 2a symbol `S(κ)` is symmetric as a real matrix (`leraySymbol_transpose`),
+but the operator-level self-adjointness statement needs the 2b Hilbert-space
+setting (reality plus the `L²` inner-product bookkeeping). It is revisited only
+if the P1 FDT argument needs it, and 2b defers it as well.
+
+## Register
+
+| frozen line | status |
+|---|---|
+| "the entire algebraic content of the Leray symbol" | the declaration inventory is exactly the symbol chain: definition, column/row kill, symmetry, idempotence, evenness |
+| finite-dimensional, exact over `ℝ` | all Lean types are exact (`Matrix (Fin d) (Fin d) ℝ`); no lattice, Fourier transform, or floating point appears |
+| the operator layer is 2b | no operator declaration exists in `Leray.lean`; 2a is the abstract symbol algebra |
+
+## Not claimed (confirmed absent from `Leray.lean`)
+
+| frozen "Not claimed" line | confirmation |
+|---|---|
+| anything with a lattice, Fourier transform or modulus | no `ZMod`, `dft`, `valMinAbs`, or norm declaration exists in the file |
+| self-adjointness of `P` (claim 8) | cut here; see mapped-prose section above; no self-adjointness declaration exists |
+| unitarity | no orthogonality/unitarity statement exists |
+| eigenvalues | no spectral/eigenvalue statement exists |
+| smoothness | no differentiability or regularity statement exists |
+
+## Scope fence carried for 2b (Nyquist)
+
+| frozen line | status |
+|---|---|
+| "2b freezes with N odd; the even-N Nyquist modes are a documented limitation, not in scope." | recorded verbatim in the module docstring; 2a itself is parity-free (`d` arbitrary) |
+| Nyquist pathology | `natAbs_valMinAbs_neg` does not give `S(−k) = S(k)` at even `N` (counterexample in the docstring); with `N` odd, `valMinAbs_neg_of_ne_half` is total and `leraySymbol_neg` supplies the evenness step |
+| code behaviour cited, not assumed | `compressible/ns.py` `Spectral2D`: `np.fft.fftfreq` wavenumbers (even-N Nyquist at `−n/2`), 2/3-rule mask `kmax = n // 3`, `k2_inv` pinning only `k = 0`; raw projection uses `kx, ky` with no Nyquist zeroing |
+
+## Forward scope (zero mode)
+
+| frozen line | status |
+|---|---|
+| `S(0) = I` is the projector convention (constants are exactly divergence-free) | stated as forward scope; 2a's `hq` excludes the zero wavevector, so no declaration is made at `κ = 0` |
+| the code's `k² = 0` gauge pin is a different operation | documented (null-gauge of the Poisson solve, `k2_inv`/`p_h[0,0] = 0`); not conflated with `S(0) = I` |
+
+## Declaration inventory (`Src/K1Lean/Leray.lean`)
+
+All declarations are in namespace `K1Lean`.
+
+| declaration | role |
+|---|---|
+| `leraySymbol` | definition of `S(κ)`, with `hq` |
+| `leraySymbol_mulVec_self` | claim 1 (column kill) |
+| `leraySymbol_transpose` | claim 3 (symmetry) |
+| `leraySymbol_vecMul_self` | claim 2 (row kill), from claims 1 and 3 |
+| `leraySymbol_idem` | claim 4 (idempotence) |
+| `leraySymbol_neg` | claim 5 (evenness) |
+
+`Tests/Audit.lean` prints signatures and `#print axioms` for the five public
+declarations; every audited declaration depends only on
+`[propext, Classical.choice, Quot.sound]`.
+
+## Deferred to 2b
+
+The operator layer is frozen separately after this file merges, with `[Odd N]`
+from line one: the two-torus `(ZMod N)²`, `valMinAbs` wavenumbers, reality of
+`P`, `P ∘ P = P`, the spectral divergence ledger
+(`div v` symbol `i Σⱼ κⱼ(k) v̂ⱼ(k)`), the placeholder wake
+(`Surrogate.isProjector` via `LinearMap.toMatrix`), and the witness theorem
+`∃ f, admissible u, k* ≠ 0 : ‖(P g)̂(k*)‖ ≠ ‖f̂(k*)‖`. None of these is claimed
+here.

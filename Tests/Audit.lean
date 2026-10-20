@@ -1,4 +1,5 @@
 import K1Lean.Antipodal
+import K1Lean.Leray
 import K1Lean.Parseval
 import K1Lean.Surrogate
 
@@ -71,3 +72,15 @@ import K1Lean.Surrogate
 #print axioms K1Lean.surrogateSpectrum_antipodalPhase
 #print axioms K1Lean.antipodal
 #print axioms K1Lean.antipodal_energy
+
+#check @K1Lean.leraySymbol
+#check @K1Lean.leraySymbol_mulVec_self
+#check @K1Lean.leraySymbol_transpose
+#check @K1Lean.leraySymbol_vecMul_self
+#check @K1Lean.leraySymbol_idem
+#check @K1Lean.leraySymbol_neg
+#print axioms K1Lean.leraySymbol_mulVec_self
+#print axioms K1Lean.leraySymbol_transpose
+#print axioms K1Lean.leraySymbol_vecMul_self
+#print axioms K1Lean.leraySymbol_idem
+#print axioms K1Lean.leraySymbol_neg
