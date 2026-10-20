@@ -342,3 +342,57 @@ from line one: the two-torus `(ZMod N)²`, `valMinAbs` wavenumbers, reality of
 (`Surrogate.isProjector` via `LinearMap.toMatrix`), and the witness theorem
 `∃ f, admissible u, k* ≠ 0 : ‖(P g)̂(k*)‖ ≠ ‖f̂(k*)‖`. None of these is claimed
 here.
+
+## 2b Statement
+
+| frozen claim | Lean counterpart |
+|---|---|
+| 1. reality bridge | `Pc_ofReal` (`hN : Odd N`) |
+| 2. idempotence, complex level | `Pc_idem` |
+| 2. idempotence, real level | `P_idem` (`hN : Odd N`, via claims 1 and `Pc_idem`) |
+| 3. spectral divergence ledger, complex | `divHat_Pc` |
+| 3. spectral divergence ledger, real | `divHat_P` (`hN : Odd N`, via claims 1 and 3) |
+| 4. placeholder wake | `P'`, `P'_comp`, `isProjector_toMatrix` (`hN : Odd N`) |
+| 5. per-mode break | `perMode_break` (`hN : Odd N`, `h3 : 3 ≤ N`) |
+
+The frozen `divHat` was corrected in the definitional layer from the field-only
+ledger to the internal-DFT ledger
+`divHat v k = if κ k = 0 then 0 else I * ∑ⱼ (κ k ⱼ : ℂ) * dft2 (v ⱼ) k`.
+The frozen claim statements are unchanged; the correction is recorded in the
+module docstring and is forced by the constant-field `e₁` counterexample to the
+field-only version.
+
+## 2b Supporting Declarations
+
+| declaration | role |
+|---|---|
+| `kappa_zero_iff`, `kappa_neg`, `kappa_dot_ne_zero` | `valMinAbs` wavenumber algebra |
+| `uncurryT`, `dft2vec`, `dft2`, `dft2Fun` | cast-free 2-D DFT construction and kernel form |
+| `dft2_apply`, `dft2_symm_apply` | forward/inverse kernel formulas, normalization `N⁻²` |
+| `dft2_star`, `dft2_ofReal_conj` | conjugation law and reality bridge |
+| `dft2_comp_neg`, `idft2_selfConj`, `idft2_im_eq_zero`, `idft2_eq_ofReal_re` | negation reindexing and self-conjugate inverse |
+| `Phat`, `PhatC`, `PhatC_eq_leraySymbol`, `Phat_zero`, `PhatC_zero`, `Phat_neg`, `PhatC_neg`, `PhatC_idem` | symbol at zero/nonzero modes, evenness, idempotence |
+| `dft2Pi`, `mulPhat`, `Pc`, `toComplex`, `ofComplexRe`, `P`, `P_apply`, `Pc_apply` | complex and real vector-field operator layer |
+| `divHat`, `surrogateSpectrum2`, `surrogateField`, `surrogateField_reality` | spectral ledger and surrogate field/spectrum bridge |
+| `P'`, `P'_comp` | curried real operator and its idempotence |
+
+## 2b Register
+
+The frozen register is the operator layer: 2-D DFT, zero-mode projector
+convention, reality bridge, idempotence at both levels, spectral divergence
+ledger, awake `Surrogate.isProjector` matrix, and the per-mode break. Exact over
+`ℂ`/`ℝ`; no PDE, time evolution, finite differences, or lattice.
+
+## 2b Not Claimed
+
+Even `N` (Nyquist fence); vanishing of any finite-difference divergence (only
+the spectral ledger); zero-mean convention (`S(0) = I` keeps the mean);
+smoothness of `κ` in `k` (`valMinAbs` folding); self-adjointness (2a claim 8
+stays cut, mapped-prose/optional); analytic/PDE regularity of `P`.
+
+## 2b Audit
+
+`Tests/Audit.lean` prints signatures for the frozen claims and supporting
+declarations, and `#print axioms` for the claims, supporting `dft2` layer, and
+surrogate bridge. Every audited declaration must depend only on
+`[propext, Classical.choice, Quot.sound]`.

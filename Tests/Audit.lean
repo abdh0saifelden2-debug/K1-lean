@@ -1,5 +1,6 @@
 import K1Lean.Antipodal
 import K1Lean.Leray
+import K1Lean.LerayBox
 import K1Lean.Parseval
 import K1Lean.Surrogate
 
@@ -84,3 +85,68 @@ import K1Lean.Surrogate
 #print axioms K1Lean.leraySymbol_vecMul_self
 #print axioms K1Lean.leraySymbol_idem
 #print axioms K1Lean.leraySymbol_neg
+
+#check @K1Lean.Pc_ofReal
+#check @K1Lean.P_idem
+#check @K1Lean.Pc_idem
+#check @K1Lean.divHat_Pc
+#check @K1Lean.divHat_P
+#check @K1Lean.P'
+#check @K1Lean.P'_comp
+#check @K1Lean.isProjector_toMatrix
+#check @K1Lean.perMode_break
+#print axioms K1Lean.Pc_ofReal
+#print axioms K1Lean.P_idem
+#print axioms K1Lean.Pc_idem
+#print axioms K1Lean.divHat_Pc
+#print axioms K1Lean.divHat_P
+#print axioms K1Lean.P'
+#print axioms K1Lean.P'_comp
+#print axioms K1Lean.isProjector_toMatrix
+#print axioms K1Lean.perMode_break
+
+#check @K1Lean.kappa_zero_iff
+#check @K1Lean.kappa_neg
+#check @K1Lean.kappa_dot_ne_zero
+#check @K1Lean.dft2_apply
+#check @K1Lean.dft2_symm_apply
+#check @K1Lean.dft2_star
+#check @K1Lean.dft2_ofReal_conj
+#check @K1Lean.dft2_comp_neg
+#check @K1Lean.idft2_selfConj
+#check @K1Lean.idft2_im_eq_zero
+#check @K1Lean.idft2_eq_ofReal_re
+#check @K1Lean.Phat
+#check @K1Lean.PhatC
+#check @K1Lean.PhatC_eq_leraySymbol
+#check @K1Lean.Phat_zero
+#check @K1Lean.PhatC_zero
+#check @K1Lean.Phat_neg
+#check @K1Lean.PhatC_neg
+#check @K1Lean.PhatC_idem
+#check @K1Lean.dft2Pi_apply
+#check @K1Lean.dft2Pi_symm_apply
+#check @K1Lean.mulPhat_apply
+#check @K1Lean.Pc_apply
+#check @K1Lean.P_apply
+#check @K1Lean.surrogateSpectrum2
+#check @K1Lean.surrogateField
+#check @K1Lean.surrogateField_reality
+#print axioms K1Lean.kappa_zero_iff
+#print axioms K1Lean.kappa_neg
+#print axioms K1Lean.kappa_dot_ne_zero
+#print axioms K1Lean.dft2_apply
+#print axioms K1Lean.dft2_symm_apply
+#print axioms K1Lean.dft2_star
+#print axioms K1Lean.dft2_ofReal_conj
+#print axioms K1Lean.dft2_comp_neg
+#print axioms K1Lean.idft2_selfConj
+#print axioms K1Lean.idft2_im_eq_zero
+#print axioms K1Lean.idft2_eq_ofReal_re
+#print axioms K1Lean.PhatC_eq_leraySymbol
+#print axioms K1Lean.Phat_zero
+#print axioms K1Lean.PhatC_zero
+#print axioms K1Lean.Phat_neg
+#print axioms K1Lean.PhatC_neg
+#print axioms K1Lean.PhatC_idem
+#print axioms K1Lean.surrogateField_reality
