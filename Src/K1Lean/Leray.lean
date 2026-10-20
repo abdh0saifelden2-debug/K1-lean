@@ -1,6 +1,9 @@
 module
 
+public import Mathlib.Algebra.Notation.Pi.Basic
 public import Mathlib.Data.Matrix.Mul
+public import Mathlib.Data.Real.Basic
+public import Mathlib.Tactic.Ring
 
 /-!
 # Frozen discrete Leray symbol statement (v1, 2026-10-20)
@@ -83,21 +86,20 @@ namespace K1Lean
 
 open Matrix
 
-variable {d : ℕ} [NeZero d]
-
 /-- The discrete Leray symbol `S(κ) = I − κκᵀ/q(κ)`, `q(κ) = κ ⬝ᵥ κ`, at
 wavevector `κ` with the nonzero hypothesis `hq`. Paper-level meaning: this is
 the symbol of the Leray projector `P = I − ∇(Δ⁻¹)∇·` on a periodic grid, with
 the zero mode kept by the projector convention (`S(0) = I`; forward scope in
 the module docstring). -/
-noncomputable def leraySymbol (κ : Fin d → ℝ) (hq : κ ⬝ᵥ κ ≠ 0) :
-    Matrix (Fin d) (Fin d) ℝ :=
+set_option linter.unusedVariables false in
+noncomputable def leraySymbol {d : ℕ} [NeZero d] (κ : Fin d → ℝ)
+    (hq : κ ⬝ᵥ κ ≠ 0) : Matrix (Fin d) (Fin d) ℝ :=
   1 - Matrix.of fun i j => κ i * κ j / (κ ⬝ᵥ κ)
 
 /-- Frozen claim 1: the symbol kills its own wavevector on the right (column
 form), `S(κ) *ᵥ κ = 0`. -/
-theorem leraySymbol_mulVec_self (κ : Fin d → ℝ) (hq : κ ⬝ᵥ κ ≠ 0) :
-    leraySymbol κ hq *ᵥ κ = 0 := by
+theorem leraySymbol_mulVec_self {d : ℕ} [NeZero d] (κ : Fin d → ℝ)
+    (hq : κ ⬝ᵥ κ ≠ 0) : leraySymbol κ hq *ᵥ κ = 0 := by
   have hA : Matrix.of (fun i j => κ i * κ j / (κ ⬝ᵥ κ)) *ᵥ κ = κ := by
     funext i
     change (∑ j, κ i * κ j / (κ ⬝ᵥ κ) * κ j) = κ i
@@ -110,11 +112,12 @@ theorem leraySymbol_mulVec_self (κ : Fin d → ℝ) (hq : κ ⬝ᵥ κ ≠ 0) :
       _ = (κ i / (κ ⬝ᵥ κ)) * (κ ⬝ᵥ κ) := by
             simp [Matrix.dotProduct]
       _ = κ i := div_mul_cancel₀ _ hq
-  simp only [leraySymbol]
+  unfold leraySymbol
   rw [Matrix.sub_mulVec, Matrix.one_mulVec, hA, sub_self]
 
 /-- Frozen claim 3: the symbol is symmetric, `S(κ)ᵀ = S(κ)`. -/
-theorem leraySymbol_transpose (κ : Fin d → ℝ) (hq : κ ⬝ᵥ κ ≠ 0) :
+theorem leraySymbol_transpose {d : ℕ} [NeZero d] (κ : Fin d → ℝ)
+    (hq : κ ⬝ᵥ κ ≠ 0) :
     (leraySymbol κ hq)ᵀ = leraySymbol κ hq := by
   ext i j
   change (if j = i then (1 : ℝ) else 0) - κ j * κ i / (κ ⬝ᵥ κ)
@@ -122,13 +125,13 @@ theorem leraySymbol_transpose (κ : Fin d → ℝ) (hq : κ ⬝ᵥ κ ≠ 0) :
   by_cases h : i = j
   · subst h
     rfl
-  · rw [ite_eq_right h, ite_eq_right (Ne.symm h)]
-    ring
+  · rw [ite_eq_right h, ite_eq_right (Ne.symm h), mul_comm (κ j) (κ i)]
 
 /-- Frozen claim 2: the symbol kills its own wavevector on the left (row
 form), `κ ᵥ* S(κ) = 0`. Proved from claims 1 and 3 via
 `Matrix.mulVec_transpose`; this is the form the 2b divergence ledger consumes. -/
-theorem leraySymbol_vecMul_self (κ : Fin d → ℝ) (hq : κ ⬝ᵥ κ ≠ 0) :
+theorem leraySymbol_vecMul_self {d : ℕ} [NeZero d] (κ : Fin d → ℝ)
+    (hq : κ ⬝ᵥ κ ≠ 0) :
     κ ᵥ* leraySymbol κ hq = 0 := by
   calc
     κ ᵥ* leraySymbol κ hq = (leraySymbol κ hq)ᵀ *ᵥ κ :=
@@ -138,7 +141,8 @@ theorem leraySymbol_vecMul_self (κ : Fin d → ℝ) (hq : κ ⬝ᵥ κ ≠ 0) :
 
 /-- Frozen claim 4: the symbol is idempotent, `S(κ) * S(κ) = S(κ)`
 (rank-one collapse: `(κκᵀ)(κκᵀ) = q(κ)·κκᵀ`). -/
-theorem leraySymbol_idem (κ : Fin d → ℝ) (hq : κ ⬝ᵥ κ ≠ 0) :
+theorem leraySymbol_idem {d : ℕ} [NeZero d] (κ : Fin d → ℝ)
+    (hq : κ ⬝ᵥ κ ≠ 0) :
     leraySymbol κ hq * leraySymbol κ hq = leraySymbol κ hq := by
   have hAA : Matrix.of (fun i j => κ i * κ j / (κ ⬝ᵥ κ)) *
       Matrix.of (fun i j => κ i * κ j / (κ ⬝ᵥ κ)) =
@@ -164,19 +168,19 @@ theorem leraySymbol_idem (κ : Fin d → ℝ) (hq : κ ⬝ᵥ κ ≠ 0) :
               _ = (κ i * κ j * (κ ⬝ᵥ κ)⁻¹) * 1 := by rw [hcc]
               _ = κ i * κ j / (κ ⬝ᵥ κ) := by
                     rw [mul_one, div_eq_mul_inv]
-  simp only [leraySymbol]
-  rw [sub_mul, mul_sub, mul_sub, one_mul, mul_one, hAA, sub_self, sub_zero]
+  unfold leraySymbol
+  rw [sub_mul, mul_sub, one_mul, mul_one, hAA, sub_self, sub_zero]
 
 /-- Frozen claim 5: the symbol is even, `S(−κ) = S(κ)`. This is the step that
 2b consumes with `[Odd N]`; at even `N` the `valMinAbs` sign symmetry fails at
 the Nyquist bins (see the scope fence in the module docstring). -/
-theorem leraySymbol_neg (κ : Fin d → ℝ) (hq : κ ⬝ᵥ κ ≠ 0) :
+theorem leraySymbol_neg {d : ℕ} [NeZero d] (κ : Fin d → ℝ)
+    (hq : κ ⬝ᵥ κ ≠ 0) :
     leraySymbol (-κ) (by simpa [neg_dotProduct_neg] using hq) =
       leraySymbol κ hq := by
   ext i j
   change (if i = j then (1 : ℝ) else 0) - (-κ) i * (-κ) j / ((-κ) ⬝ᵥ (-κ))
       = (if i = j then (1 : ℝ) else 0) - κ i * κ j / (κ ⬝ᵥ κ)
-  rw [Pi.neg_apply, neg_dotProduct_neg]
-  ring
+  rw [Pi.neg_apply, neg_dotProduct_neg, neg_mul_neg]
 
 end K1Lean
