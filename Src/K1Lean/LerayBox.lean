@@ -222,7 +222,7 @@ noncomputable def uncurryT :
   invFun Φ x := Φ ((finTwoArrowEquiv (ZMod N)) x)
   left_inv X := by
     funext x
-    simp
+    simp only [Equiv.symm_apply_apply]
   right_inv Φ := by
     funext p
     simp
@@ -362,6 +362,7 @@ theorem dft2_symm_apply (X : TwoTorus N → ℂ) (k : TwoTorus N) :
       rw [show x 1 * k 1 + x 0 * k 0 = x 0 * k 0 + x 1 * k 1 by ring]
     exact h1.trans h2
   rw [hsum]
+  simp only [g]
   apply Finset.sum_congr rfl
   intro x _
   rw [show x 0 * k 0 + x 1 * k 1 =
@@ -478,8 +479,8 @@ theorem Phat_neg (hN : Odd N) (k : TwoTorus N) : Phat (-k) = Phat k := by
     simp
   · have hnk : -k ≠ 0 := neg_ne_zero.mpr hk
     simp only [Phat, hk, hnk]
-    rw [kappa_neg hN k]
-    exact leraySymbol_neg (kappa k) (kappa_dot_ne_zero k hk)
+    simpa [kappa_neg hN k, leraySymbol_neg] using
+      leraySymbol_neg (kappa k) (kappa_dot_ne_zero k hk)
 
 /-- Complexified evenness. -/
 theorem PhatC_neg (hN : Odd N) (k : TwoTorus N) : PhatC (-k) = PhatC k := by
@@ -514,10 +515,16 @@ noncomputable def mulPhat :
   toFun W j k := (PhatC k *ᵥ fun l => W l k) j
   map_add' W W' := by
     funext j k
-    simp [Matrix.mulVec_add]
+    change (PhatC k *ᵥ ((fun l => W l k) + fun l => W' l k)) j =
+      (PhatC k *ᵥ fun l => W l k) j + (PhatC k *ᵥ fun l => W' l k) j
+    rw [Matrix.mulVec_add]
+    rfl
   map_smul' c W := by
     funext j k
-    simp [Matrix.mulVec_smul]
+    change (PhatC k *ᵥ (c • fun l => W l k)) j =
+      c * (PhatC k *ᵥ fun l => W l k) j
+    rw [Matrix.mulVec_smul]
+    rfl
 
 @[simp]
 theorem mulPhat_apply (W : Fin 2 → TwoTorus N → ℂ) (j : Fin 2) (k : TwoTorus N) :
@@ -594,8 +601,7 @@ theorem Pc_ofReal (hN : Odd N) (v : Fin 2 → TwoTorus N → ℝ) :
 theorem Pc_idem : (Pc (N := N)).comp (Pc (N := N)) = Pc (N := N) := by
   ext v j
   simp only [LinearMap.comp_apply, Pc_apply]
-  apply dft2.injective
-  simp only [dft2.apply_symm_apply]
+  rw [Equiv.apply_eq_iff_eq dft2.symm.toEquiv]
   funext k
   have hinner : (fun l => dft2 ((Pc v) l) k) =
       fun l => (PhatC k *ᵥ fun m => dft2 (v m) k) l := by
@@ -612,7 +618,8 @@ theorem Pc_idem : (Pc (N := N)).comp (Pc (N := N)) = Pc (N := N) := by
 /-- Frozen claim 2 (real level): `P` is idempotent. -/
 theorem P_idem (hN : Odd N) :
     (P (N := N)).comp (P (N := N)) = P (N := N) := by
-  ext v j x
+  ext v
+  funext j x
   simp only [LinearMap.comp_apply, P_apply]
   have hpv : (fun j' y => (P v j' y : ℂ)) =
       Pc (fun j' y => (v j' y : ℂ)) :=
@@ -686,7 +693,7 @@ theorem surrogateField_reality (f : TwoTorus N → ℝ) (u : TwoTorus N → ℂ)
     intro k
     dsimp only [surrogateSpectrum2]
     rw [star_mul']
-    simp only [RCLike.conj_ofReal]
+    simp
     have hnorm : ‖dft2 (fun x => (f x : ℂ)) k‖ =
         ‖dft2 (fun x => (f x : ℂ)) (-k)‖ := by
       rw [← dft2_ofReal_conj f k, norm_star]
@@ -710,8 +717,8 @@ theorem P'_comp (hN : Odd N) :
   have hpp : ∀ y : Fin 2 → TwoTorus N → ℝ, P (P y) = P y :=
     fun y => DFunLike.congr_fun (P_idem hN) y
   ext x
-  simp only [LinearMap.comp_apply, P', LinearMap.coe_comp, Function.comp_apply,
-    LinearEquiv.apply_symm_apply, hpp]
+  simp only [LinearMap.comp_apply, P', LinearMap.coe_comp, Function.comp_apply]
+  rw [LinearEquiv.apply_symm_apply, hpp]
 
 /-- Frozen claim 4: the placeholder projector is awake on `P`. -/
 theorem isProjector_toMatrix (hN : Odd N) :
@@ -744,9 +751,10 @@ theorem perMode_break (hN : Odd N) (h3 : 3 ≤ N) :
     funext i
     fin_cases i
     · change ((kstar 0).valMinAbs : ℝ) = (1 : ℝ)
-      rw [show kstar 0 = (1 : ZMod N) by rfl,
-        ZMod.valMinAbs_natCast_of_le_half (n := N) (a := 1)
-          (by omega : 1 ≤ N / 2)]
+      have hval : (1 : ZMod N).valMinAbs = (1 : ℤ) := by
+        simpa using ZMod.valMinAbs_natCast_of_le_half (n := N) (a := 1)
+          (by omega : 1 ≤ N / 2)
+      rw [show kstar 0 = (1 : ZMod N) by rfl, hval]
       norm_num
     · simp [kappa, kstar]
   let X : TwoTorus N → Fin 2 → ℂ := fun k j =>
@@ -820,7 +828,8 @@ theorem perMode_break (hN : Odd N) (h3 : 3 ≤ N) :
           (algebraMap ℝ ℂ) :=
       PhatC_eq_leraySymbol kstar hkstar
     rw [hP]
-    have hvec : (fun l => (kappa kstar l : ℂ)) = (![1, 0] : Fin 2 → ℂ) := by
+    have hvec : ((algebraMap ℝ ℂ) ∘ kappa kstar) =
+        (![1, 0] : Fin 2 → ℂ) := by
       funext l
       rw [hkappa]
       fin_cases l <;> simp
