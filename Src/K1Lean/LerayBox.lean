@@ -478,9 +478,9 @@ theorem Phat_neg (hN : Odd N) (k : TwoTorus N) : Phat (-k) = Phat k := by
   · rw [hk]
     simp
   · have hnk : -k ≠ 0 := neg_ne_zero.mpr hk
-    simp only [Phat, hk, hnk]
-    simpa [kappa_neg hN k, leraySymbol_neg] using
-      leraySymbol_neg (kappa k) (kappa_dot_ne_zero k hk)
+    simp only [Phat, hk, hnk, leraySymbol]
+    rw [kappa_neg hN k]
+    simp only [Pi.neg_apply, neg_mul_neg, neg_dotProduct_neg]
 
 /-- Complexified evenness. -/
 theorem PhatC_neg (hN : Odd N) (k : TwoTorus N) : PhatC (-k) = PhatC k := by
@@ -601,7 +601,7 @@ theorem Pc_ofReal (hN : Odd N) (v : Fin 2 → TwoTorus N → ℝ) :
 theorem Pc_idem : (Pc (N := N)).comp (Pc (N := N)) = Pc (N := N) := by
   ext v j
   simp only [LinearMap.comp_apply, Pc_apply]
-  rw [Equiv.apply_eq_iff_eq dft2.symm.toEquiv]
+  refine congrArg dft2.symm ?_
   funext k
   have hinner : (fun l => dft2 ((Pc v) l) k) =
       fun l => (PhatC k *ᵥ fun m => dft2 (v m) k) l := by
@@ -618,7 +618,8 @@ theorem Pc_idem : (Pc (N := N)).comp (Pc (N := N)) = Pc (N := N) := by
 /-- Frozen claim 2 (real level): `P` is idempotent. -/
 theorem P_idem (hN : Odd N) :
     (P (N := N)).comp (P (N := N)) = P (N := N) := by
-  ext v
+  apply LinearMap.ext
+  intro v
   funext j x
   simp only [LinearMap.comp_apply, P_apply]
   have hpv : (fun j' y => (P v j' y : ℂ)) =
@@ -693,11 +694,11 @@ theorem surrogateField_reality (f : TwoTorus N → ℝ) (u : TwoTorus N → ℂ)
     intro k
     dsimp only [surrogateSpectrum2]
     rw [star_mul']
-    simp
     have hnorm : ‖dft2 (fun x => (f x : ℂ)) k‖ =
         ‖dft2 (fun x => (f x : ℂ)) (-k)‖ := by
       rw [← dft2_ofReal_conj f k, norm_star]
-    rw [hnorm, hu k]
+    rw [hu k, hnorm]
+    simp
   have hfun : (fun x => (surrogateField f u x : ℂ)) =
       dft2.symm (surrogateSpectrum2 f u) := by
     funext x
@@ -716,9 +717,15 @@ theorem P'_comp (hN : Odd N) :
     (P' (N := N)).comp (P' (N := N)) = P' (N := N) := by
   have hpp : ∀ y : Fin 2 → TwoTorus N → ℝ, P (P y) = P y :=
     fun y => DFunLike.congr_fun (P_idem hN) y
+  have hcancel : ∀ y : Fin 2 → TwoTorus N → ℝ,
+      (LinearEquiv.curry ℝ ℝ (Fin 2) (TwoTorus N)).toLinearMap
+        ((LinearEquiv.curry ℝ ℝ (Fin 2) (TwoTorus N)).symm.toLinearMap y) = y := by
+    intro y
+    simpa only [LinearEquiv.coe_toLinearMap] using
+      (LinearEquiv.curry ℝ ℝ (Fin 2) (TwoTorus N)).apply_symm_apply y
   ext x
-  simp only [LinearMap.comp_apply, P', LinearMap.coe_comp, Function.comp_apply]
-  rw [LinearEquiv.apply_symm_apply, hpp]
+  simp only [LinearMap.comp_apply, P']
+  rw [hcancel, hpp]
 
 /-- Frozen claim 4: the placeholder projector is awake on `P`. -/
 theorem isProjector_toMatrix (hN : Odd N) :
