@@ -13,6 +13,9 @@ public import Mathlib.LinearAlgebra.Matrix.ToLin
 public import Mathlib.LinearAlgebra.Pi
 public import Mathlib.Logic.Equiv.Fin.Basic
 public import Mathlib.Tactic
+public import K1Lean.Leray
+public import K1Lean.Parseval
+public import K1Lean.Surrogate
 
 /-!
 # 2b frozen statement (v1, 2026-10-20)
@@ -160,6 +163,7 @@ set_option autoImplicit false
 namespace K1Lean
 
 open Matrix
+open ZMod
 
 /-- The two-torus grid used by the operator layer. -/
 abbrev TwoTorus (N : ℕ) : Type := Fin 2 → ZMod N
@@ -252,7 +256,7 @@ noncomputable def dft2Fun (X : TwoTorus N → ℂ) (k : TwoTorus N) : ℂ :=
   ∑ x : TwoTorus N, stdAddChar (-(x 0 * k 0 + x 1 * k 1)) • X x
 
 /-- Forward kernel formula for the iterated transform. -/
-theorem dft2vec_apply (Φ : ZMod N → ZMod N → ℂ) (k₀ k₁ : ZMod N) :
+theorem dft2vec_apply (Φ : ZMod N × ZMod N → ℂ) (k₀ k₁ : ZMod N) :
     dft2vec Φ (k₀, k₁) =
       ∑ i, stdAddChar (-(i * k₀)) * ∑ j, stdAddChar (-(j * k₁)) * Φ (i, j) := by
   rw [dft2vec]
@@ -262,7 +266,7 @@ theorem dft2vec_apply (Φ : ZMod N → ZMod N → ℂ) (k₀ k₁ : ZMod N) :
     Function.curry_apply]
 
 /-- Inverse kernel formula for the iterated transform. -/
-theorem dft2vec_symm_apply (Φ : ZMod N → ZMod N → ℂ) (k₀ k₁ : ZMod N) :
+theorem dft2vec_symm_apply (Φ : ZMod N × ZMod N → ℂ) (k₀ k₁ : ZMod N) :
     dft2vec.symm Φ (k₀, k₁) =
       ((N : ℂ) * N)⁻¹ * ∑ j, ∑ i, stdAddChar (j * k₁ + i * k₀) * Φ (i, j) := by
   have hcoef : (N : ℂ)⁻¹ * (N : ℂ)⁻¹ = ((N : ℂ) * N)⁻¹ := by
@@ -381,9 +385,10 @@ theorem dft2_ofReal_conj (f : TwoTorus N → ℝ) (k : TwoTorus N) :
     star (dft2 (fun x => (f x : ℂ)) k) =
       dft2 (fun x => (f x : ℂ)) (-k) := by
   rw [dft2_star]
-  congr 1
-  funext x
-  exact RCLike.conj_ofReal (f x)
+  have hfun : (fun j => star (f j : ℂ)) = fun x => (f x : ℂ) := by
+    funext x
+    exact RCLike.conj_ofReal (f x)
+  rw [hfun]
 
 /-- Reindexing law: `dft2 (fun j => X (−j)) = fun k => dft2 X (−k)`. -/
 theorem dft2_comp_neg (X : TwoTorus N → ℂ) :
@@ -478,7 +483,8 @@ theorem PhatC_idem (k : TwoTorus N) : PhatC k * PhatC k = PhatC k := by
   by_cases hk : k = 0
   · rw [hk, PhatC_zero]
     simp
-  · rw [PhatC_eq_leraySymbol k hk, ← Matrix.map_mul, leraySymbol_idem]
+  · rw [PhatC_eq_leraySymbol k hk,
+      ← Matrix.map_mul (f := (algebraMap ℝ ℂ : ℝ →+* ℂ)), leraySymbol_idem]
 
 /-- Componentwise 2-D DFT on vector fields. -/
 noncomputable def dft2Pi :
@@ -498,7 +504,7 @@ theorem dft2Pi_symm_apply (v : Fin 2 → TwoTorus N → ℂ) (j : Fin 2) :
 /-- Pointwise multiplication by the Leray symbol on vector fields. -/
 noncomputable def mulPhat :
     (Fin 2 → TwoTorus N → ℂ) →ₗ[ℂ] (Fin 2 → TwoTorus N → ℂ) where
-  toFun W k := PhatC k *ᵥ W k
+  toFun W k := PhatC k *ᵥ fun j => W j k
   map_add' W W' := by
     funext k
     simp [Matrix.mulVec_add]
@@ -508,7 +514,7 @@ noncomputable def mulPhat :
 
 @[simp]
 theorem mulPhat_apply (W : Fin 2 → TwoTorus N → ℂ) (k : TwoTorus N) :
-    mulPhat W k = PhatC k *ᵥ W k :=
+    mulPhat W k = PhatC k *ᵥ fun j => W j k :=
   rfl
 
 /-- The complex vector-field Leray operator. -/
@@ -544,7 +550,7 @@ noncomputable def ofComplexRe :
 
 /-- The real vector-field Leray operator. -/
 noncomputable def P : (Fin 2 → TwoTorus N → ℝ) →ₗ[ℝ] (Fin 2 → TwoTorus N → ℝ) :=
-  ofComplexRe.comp (Pc.comp toComplex)
+  ofComplexRe.comp ((Pc.restrictScalars ℝ).comp toComplex)
 
 @[simp]
 theorem P_apply (v : Fin 2 → TwoTorus N → ℝ) (j : Fin 2) (x : TwoTorus N) :
@@ -727,8 +733,9 @@ theorem perMode_break (hN : Odd N) (h3 : 3 ≤ N) :
   have hkappa : kappa kstar = ![1, 0] := by
     funext i
     fin_cases i
-    · simp [kappa, kstar,
-        ZMod.valMinAbs_natCast_of_le_half (by omega : 1 ≤ N / 2)]
+    · simp only [kappa, kstar]
+      rw [ZMod.valMinAbs_natCast_of_le_half (n := N) (a := 1)
+        (by omega : 1 ≤ N / 2)]
     · simp [kappa, kstar]
   let X : TwoTorus N → Fin 2 → ℂ := fun k j =>
     if k = kstar ∨ k = -kstar then (![1, 0] : Fin 2 → ℂ) j else 0
