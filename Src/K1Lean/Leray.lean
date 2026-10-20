@@ -2,7 +2,7 @@ module
 
 public import Mathlib.Algebra.Notation.Pi.Basic
 public import Mathlib.Data.Matrix.Mul
-public import Mathlib.Data.Real.Basic
+public import Mathlib.Basic.Real.Basic
 public import Mathlib.Tactic.Ring
 
 /-!
@@ -82,6 +82,10 @@ algebraic; no PDE claim.
 
 set_option autoImplicit false
 
+-- The frozen signatures carry `d ≥ 1` (`NeZero d`) and the nonzero proof
+-- `hq`; both are hypotheses of the statement, not computational data.
+set_option linter.unusedVariables false
+
 namespace K1Lean
 
 open Matrix
@@ -91,7 +95,6 @@ wavevector `κ` with the nonzero hypothesis `hq`. Paper-level meaning: this is
 the symbol of the Leray projector `P = I − ∇(Δ⁻¹)∇·` on a periodic grid, with
 the zero mode kept by the projector convention (`S(0) = I`; forward scope in
 the module docstring). -/
-set_option linter.unusedVariables false in
 noncomputable def leraySymbol {d : ℕ} [NeZero d] (κ : Fin d → ℝ)
     (hq : κ ⬝ᵥ κ ≠ 0) : Matrix (Fin d) (Fin d) ℝ :=
   1 - Matrix.of fun i j => κ i * κ j / (κ ⬝ᵥ κ)
@@ -109,8 +112,7 @@ theorem leraySymbol_mulVec_self {d : ℕ} [NeZero d] (κ : Fin d → ℝ)
             Finset.sum_congr rfl fun j _ => by ring
       _ = (κ i / (κ ⬝ᵥ κ)) * ∑ j, κ j * κ j :=
             (Finset.mul_sum Finset.univ (fun j => κ j * κ j) _).symm
-      _ = (κ i / (κ ⬝ᵥ κ)) * (κ ⬝ᵥ κ) := by
-            simp [Matrix.dotProduct]
+      _ = (κ i / (κ ⬝ᵥ κ)) * (κ ⬝ᵥ κ) := rfl
       _ = κ i := div_mul_cancel₀ _ hq
   unfold leraySymbol
   rw [Matrix.sub_mulVec, Matrix.one_mulVec, hA, sub_self]
@@ -156,8 +158,7 @@ theorem leraySymbol_idem {d : ℕ} [NeZero d] (κ : Fin d → ℝ)
             Finset.sum_congr rfl fun l _ => by ring
       _ = (κ i * κ j * (κ ⬝ᵥ κ)⁻¹ * (κ ⬝ᵥ κ)⁻¹) * ∑ l, κ l * κ l :=
             (Finset.mul_sum Finset.univ (fun l => κ l * κ l) _).symm
-      _ = (κ i * κ j * (κ ⬝ᵥ κ)⁻¹ * (κ ⬝ᵥ κ)⁻¹) * (κ ⬝ᵥ κ) := by
-            simp [Matrix.dotProduct]
+      _ = (κ i * κ j * (κ ⬝ᵥ κ)⁻¹ * (κ ⬝ᵥ κ)⁻¹) * (κ ⬝ᵥ κ) := rfl
       _ = κ i * κ j / (κ ⬝ᵥ κ) := by
             have hcc : (κ ⬝ᵥ κ)⁻¹ * (κ ⬝ᵥ κ) = 1 := by
               rw [mul_comm (κ ⬝ᵥ κ)⁻¹ (κ ⬝ᵥ κ), mul_inv_cancel₀ hq]
@@ -169,7 +170,7 @@ theorem leraySymbol_idem {d : ℕ} [NeZero d] (κ : Fin d → ℝ)
               _ = κ i * κ j / (κ ⬝ᵥ κ) := by
                     rw [mul_one, div_eq_mul_inv]
   unfold leraySymbol
-  rw [sub_mul, mul_sub, one_mul, mul_one, hAA, sub_self, sub_zero]
+  simp only [sub_mul, mul_sub, one_mul, mul_one, hAA, sub_self, sub_zero]
 
 /-- Frozen claim 5: the symbol is even, `S(−κ) = S(κ)`. This is the step that
 2b consumes with `[Odd N]`; at even `N` the `valMinAbs` sign symmetry fails at
@@ -181,6 +182,6 @@ theorem leraySymbol_neg {d : ℕ} [NeZero d] (κ : Fin d → ℝ)
   ext i j
   change (if i = j then (1 : ℝ) else 0) - (-κ) i * (-κ) j / ((-κ) ⬝ᵥ (-κ))
       = (if i = j then (1 : ℝ) else 0) - κ i * κ j / (κ ⬝ᵥ κ)
-  rw [Pi.neg_apply, neg_dotProduct_neg, neg_mul_neg]
+  simp only [Pi.neg_apply, neg_dotProduct_neg, neg_mul_neg]
 
 end K1Lean
