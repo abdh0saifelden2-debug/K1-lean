@@ -599,21 +599,24 @@ theorem Pc_ofReal (hN : Odd N) (v : Fin 2 → TwoTorus N → ℝ) :
 
 /-- Frozen claim 2 (complex level): `Pc` is idempotent. -/
 theorem Pc_idem : (Pc (N := N)).comp (Pc (N := N)) = Pc (N := N) := by
-  ext v j
+  ext v j x
   simp only [LinearMap.comp_apply, Pc_apply]
-  refine congrArg (dft2 (N := N)).symm ?_
-  funext k
-  have hinner : (fun l => dft2 ((Pc v) l) k) =
-      fun l => (PhatC k *ᵥ fun m => dft2 (v m) k) l := by
-    funext l
-    rw [Pc_apply]
-    change dft2 (dft2.symm
-      (fun k' => (PhatC k' *ᵥ fun m => dft2 (v m) k') l)) k = _
-    rw [dft2.apply_symm_apply]
-  rw [hinner]
-  change (PhatC k *ᵥ (PhatC k *ᵥ fun m => dft2 (v m) k)) j =
-    (PhatC k *ᵥ fun m => dft2 (v m) k) j
-  rw [Matrix.mulVec_mulVec, PhatC_idem]
+  have hAB :
+      (fun k => (PhatC k *ᵥ fun l => dft2 ((Pc v) l) k) j) =
+      (fun k => (PhatC k *ᵥ fun l => dft2 (v l) k) j) := by
+    funext k
+    have hinner : (fun l => dft2 ((Pc v) l) k) =
+        fun l => (PhatC k *ᵥ fun m => dft2 (v m) k) l := by
+      funext l
+      rw [Pc_apply]
+      change dft2 (dft2.symm
+        (fun k' => (PhatC k' *ᵥ fun m => dft2 (v m) k') l)) k = _
+      rw [dft2.apply_symm_apply]
+    rw [hinner]
+    change (PhatC k *ᵥ (PhatC k *ᵥ fun m => dft2 (v m) k)) j =
+      (PhatC k *ᵥ fun m => dft2 (v m) k) j
+    rw [Matrix.mulVec_mulVec, PhatC_idem]
+  rw [hAB]
 
 /-- Frozen claim 2 (real level): `P` is idempotent. -/
 theorem P_idem (hN : Odd N) :
