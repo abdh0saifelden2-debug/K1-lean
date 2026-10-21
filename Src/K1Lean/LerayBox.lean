@@ -599,7 +599,9 @@ theorem Pc_ofReal (hN : Odd N) (v : Fin 2 → TwoTorus N → ℝ) :
 
 /-- Frozen claim 2 (complex level): `Pc` is idempotent. -/
 theorem Pc_idem : (Pc (N := N)).comp (Pc (N := N)) = Pc (N := N) := by
-  ext v j x
+  apply LinearMap.ext
+  intro v
+  funext j x
   simp only [LinearMap.comp_apply, Pc_apply]
   have hAB :
       (fun k => (PhatC k *ᵥ fun l => dft2 ((Pc v) l) k) j) =
