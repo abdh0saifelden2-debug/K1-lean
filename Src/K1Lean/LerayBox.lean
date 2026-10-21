@@ -602,7 +602,8 @@ theorem Pc_idem : (Pc (N := N)).comp (Pc (N := N)) = Pc (N := N) := by
   apply LinearMap.ext
   intro v
   funext j x
-  simp only [LinearMap.comp_apply, Pc_apply]
+  simp only [LinearMap.comp_apply]
+  rw [Pc_apply (Pc v) j, Pc_apply v j]
   have hAB :
       (fun k => (PhatC k *ᵥ fun l => dft2 ((Pc v) l) k) j) =
       (fun k => (PhatC k *ᵥ fun l => dft2 (v l) k) j) := by
