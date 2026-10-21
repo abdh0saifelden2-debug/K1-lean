@@ -601,7 +601,7 @@ theorem Pc_ofReal (hN : Odd N) (v : Fin 2 → TwoTorus N → ℝ) :
 theorem Pc_idem : (Pc (N := N)).comp (Pc (N := N)) = Pc (N := N) := by
   ext v j
   simp only [LinearMap.comp_apply, Pc_apply]
-  refine congrArg dft2.symm ?_
+  refine congrArg (dft2 (N := N)).symm ?_
   funext k
   have hinner : (fun l => dft2 ((Pc v) l) k) =
       fun l => (PhatC k *ᵥ fun m => dft2 (v m) k) l := by
@@ -621,7 +621,8 @@ theorem P_idem (hN : Odd N) :
   apply LinearMap.ext
   intro v
   funext j x
-  simp only [LinearMap.comp_apply, P_apply]
+  simp only [LinearMap.comp_apply]
+  rw [P_apply (P v) j x, P_apply v j x]
   have hpv : (fun j' y => (P v j' y : ℂ)) =
       Pc (fun j' y => (v j' y : ℂ)) :=
     (Pc_ofReal hN v).symm
